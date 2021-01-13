@@ -1,0 +1,276 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TTDS CW3</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+</head>
+<body>
+    <header class="header fixed-top">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light navbar-dark bg-dark" style="padding:10px">
+
+            <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+                <span class="navbar-toggler-icon"></span>
+            </button> 
+            <a class="navbar-brand" href="#">TTDS CW3</a>
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="navbar-nav">
+                    <li id="type" class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" style="margin-right:20px">{{txt}}</a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                            <a v-on:click="setType('search')" class="dropdown-item" href="#">search</a>
+                            <a v-on:click="setType('retrieval')" class="dropdown-item" href="#">retrieval</a>
+                        </div>
+                    </li>
+                </ul>
+                <form id="txt" class="form-inline">
+                    <input v-model="query" class="form-control mr-sm-2" type="text" style="width:550px">
+                    <button v-on:click="search()" class="btn btn-primary my-2 my-sm-0" type="submit">
+                        Search
+                    </button>
+                </form>
+                <ul class="navbar-nav ml-md-auto">
+                    <li id="everyPage" class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown">{{num}} Results Every Page</a>
+                        <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdownMenuLink">
+                            <a v-on:click="setEveryPage(10)" class="dropdown-item" href="#">10</a>
+                            <a v-on:click="setEveryPage(20)" class="dropdown-item" href="#">20</a>
+                            <div class="dropdown-divider"></div> 
+                            <a v-on:click="setEveryPage(30)" class="dropdown-item" href="#">30</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container-fluid" style="margin-top:100px;text-align:center">
+        <div class="row" style="max-width:1200px;margin:0 auto">
+            <div class="col-md-12">
+                <div id="root" class="row" style="margin-bottom:30px;text-align:left">
+                    <div class="col-md-12" style="margin-bottom:10px">
+                        <h3>{{hint}}</h3>
+                    </div>
+                    <todo-item v-for="item in list" :key="item.docid" :docid="item.docid" :desc="item.desc"></todo-item>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <nav id="pages">
+                            <ul v-show="isShow" class="pagination">
+                                <li class="page-item">
+                                    <a v-on:click="spawn(1);" class="page-link" href="#">First</a>
+                                </li>
+                                <li class="page-item">
+                                    <a v-on:click="spawnPre();" class="page-link" href="#">Previous</a>
+                                </li>
+                                <page-item v-for="item in list" :key="item.page" :page="item.page" :mstyle="item.mstyle" @spawn="spawn(item.page)"></page-item>
+                                <li class="page-item">
+                                    <a v-on:click="spawnNext();" class="page-link" href="#">Next</a>
+                                </li>
+                                <li class="page-item">
+                                    <a v-on:click="spawnLast();" class="page-link" href="#">Last</a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+    <script type="text/javascript">
+        let value = localStorage.getItem("type");
+        var type = (value == undefined || value == null) ? "retrieval" : value //"search"
+        value = localStorage.getItem("txt");
+        var txt = (value == undefined || value == null) ? 'TFIDF income tax reduction' : value
+        value = localStorage.getItem("everyPage");
+        var everyPage = (value == undefined || value == null) ? 10 : value
+
+        var start = 0
+        var end = everyPage - 1
+
+        var resultNum = 0
+        var nowPage = 1     
+        var pageNum = 1
+
+        const maxShowPage = 5
+
+        Vue.component('todo-item', {
+            template: '<div class="col-md-12" style="margin: 10px 0"><h3>{{docid}}</h3><span class="badge badge-success" style="margin-right:10px">Label</span><p class="lead">{{desc}}</p></div>',
+            props: ['docid','desc']
+        })
+        
+        Vue.component('page-item', {
+            template: '<li class="page-item"><a v-bind:style="{backgroundColor:mstyle}" v-on:click=\'$emit("spawn")\' class="page-link" href = "#" >{{page}}</a></li>',
+            props: ['page','mstyle']
+        })
+
+        var request = new Vue({
+            el: "#root",
+            data: {
+                hint: 'Start your Search! ',
+                list: []
+            },
+            methods: {
+                loadData: function ()
+                {
+                    let that = this;
+                    let params = '?txt=' + txt
+                    params += '&start=' + start
+                    params += '&end=' + end
+
+                    const address = 'http://localhost'
+
+                    axios.get(address+':8080/get/' + type + params)
+                        .then(function (response)
+                        {
+                            if(response.data.type == "success")
+                            {
+                                resultNum = response.data.num;
+                                that.hint = 'Get ' + resultNum + ' Results';
+                                that.list = response.data.datas;
+                                pageNum = Math.ceil(resultNum / everyPage);
+                                pages.spawnAfter();
+                            }
+                            else{
+                                pages.isShow = false;
+                                that.list = [];
+                                that.hint = response.data.hint;
+                            }
+
+                            //that.$forceUpdate(); //强制刷新
+                        }).catch(function (error) {
+                            pages.isShow = false;
+                            that.list = [];
+                            that.hint = "Server Error!";
+                            console.log(error);
+                        });
+                }
+            }
+        })
+
+        var vue_type = new Vue({
+            el: '#type',
+            data: {
+                txt:''
+            },
+            methods:
+            {
+                setType: function (param)
+                {
+                    type = param
+                    localStorage.setItem("type", type);
+                    this.txt = type;
+                }
+            },
+            mounted: function ()
+            {
+                this.txt = type;
+            } 
+        })
+
+        var vue_everyPage = new Vue({
+            el: '#everyPage',
+            data: {
+                num: 0
+            },
+            methods:
+            {
+                setEveryPage: function (param)
+                {
+                    everyPage = param
+                    localStorage.setItem("everyPage", everyPage);
+                    this.num = everyPage;
+                }
+            },
+            mounted: function () {
+                this.num = everyPage;
+            } 
+        })
+
+        var vue_txt = new Vue({
+            el: '#txt',
+            data: {
+                query:''
+            },
+            methods:
+            {
+                search: function () {
+                    txt = this.query
+                    localStorage.setItem("txt", txt);
+                    pages.spawn(1);
+                }
+            },
+            mounted: function () {
+                this.query = txt;
+            }
+        })
+
+        var pages = new Vue({
+            el: '#pages',
+            data: {
+                pre: 1,
+                next: 1,
+                isShow: false,
+                list: [{ page: 1, mstyle: '#e9ecef'}],
+            },
+            methods:
+            {
+                spawnPre: function () {
+                    this.spawn(this.pre);
+                },
+                spawnNext: function () {
+                    this.spawn(this.next);
+                },
+                spawnLast: function () {
+                    this.spawn(pageNum);
+                },
+                spawn: function (page) {
+                    nowPage = page;
+
+                    start = (nowPage-1) * everyPage
+                    end = nowPage * everyPage - 1
+
+                    request.loadData();
+                },
+                spawnAfter: function ()
+                {
+                    this.isShow = true;
+
+                    if (nowPage == 1)
+                        this.pre = 1
+                    else
+                        this.pre = nowPage - 1
+
+                    if (nowPage == pageNum)
+                        this.next = pageNum
+                    else
+                        this.next = nowPage + 1
+
+                    let arr = []
+                    let i0 = nowPage - parseInt(maxShowPage / 2);
+                    if (i0 < 1)
+                        i0 = 1;
+                    for (let i = i0; i < i0 + maxShowPage && i <= pageNum; i += 1) {
+                        let str = '#e9ecef'
+                        arr.push({ page: i, mstyle: i == nowPage ? str : '' });
+                    }
+                    this.list = arr;
+
+                    //that.$forceUpdate(); //强制刷新
+                }
+            }
+        })
+    </script>
+
+</body>
+</html>
