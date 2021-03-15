@@ -1,5 +1,7 @@
 # TextSearchEngine
 
+采用springboot的文本搜索引擎，部署后访问前端网页即可搜索并得到结果。
+
 # Module分层：  
 层次分3层  
 Model层负责文件读写，数据存储，预处理(去停止词和stem)。  
