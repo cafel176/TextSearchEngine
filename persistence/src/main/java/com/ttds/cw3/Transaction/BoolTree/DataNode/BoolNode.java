@@ -25,7 +25,7 @@ public final class BoolNode extends DataNode<Boolean>
         ArrayList<SearchResult<Boolean>> otherValue = other.getValue();
         for(int i=0;i<value.size();i++)
         {
-            SearchResult re = new SearchResult(value.get(i).getDocid(),value.get(i).getValue() && otherValue.get(i).getValue());
+            SearchResult re = new SearchResult(value.get(i).getDocid(),value.get(i).getDocName(),value.get(i).getValue() && otherValue.get(i).getValue());
             re.setDesc(value.get(i).getDesc());
             result.add(re);
         }
@@ -39,7 +39,7 @@ public final class BoolNode extends DataNode<Boolean>
         ArrayList<SearchResult<Boolean>> otherValue = other.getValue();
         for(int i=0;i<value.size();i++)
         {
-            SearchResult re = new SearchResult(value.get(i).getDocid(),value.get(i).getValue() || otherValue.get(i).getValue());
+            SearchResult re = new SearchResult(value.get(i).getDocid(),value.get(i).getDocName(),value.get(i).getValue() || otherValue.get(i).getValue());
             re.setDesc(value.get(i).getDesc());
             result.add(re);
         }
@@ -52,7 +52,7 @@ public final class BoolNode extends DataNode<Boolean>
         ArrayList<SearchResult<Boolean>> result = new ArrayList<>();
         for(int i=0;i<value.size();i++)
         {
-            SearchResult re = new SearchResult(value.get(i).getDocid(),!value.get(i).getValue());
+            SearchResult re = new SearchResult(value.get(i).getDocid(),value.get(i).getDocName(),!value.get(i).getValue());
             re.setDesc(value.get(i).getDesc());
             result.add(re);
         }

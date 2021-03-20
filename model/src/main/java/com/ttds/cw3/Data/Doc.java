@@ -2,13 +2,28 @@ package com.ttds.cw3.Data;
 
 import com.ttds.cw3.Interface.DocInterface;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
+
+@Document(collection = "doc")
 public class Doc implements DocInterface
 {
+    @Id
     private String id = "";
+
+    private String name = "";
+    private String author = "";
     private String category = "";
-    private String text = "";
+    private String content = "";
 
     public Doc() { }
+
+    public Doc(String content,String author, String category)
+    {
+        this.author = author;
+        this.category = category;
+        this.content = content;
+    }
 
     public Doc(String text)
     {
@@ -17,8 +32,10 @@ public class Doc implements DocInterface
 
     public Doc(JSONAdapter a) {
         this.id = a.getString("id");
+        this.name = a.getString("name");
+        this.author = a.getString("author");
         this.category = a.getString("category");
-        this.text = a.getString("text");
+        this.content = a.getString("text");
     }
 
     public String getId()
@@ -32,6 +49,14 @@ public class Doc implements DocInterface
             this.id = id;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public String getCategory()
     {
         return category;
@@ -43,15 +68,26 @@ public class Doc implements DocInterface
             this.category = category.trim();
     }
 
-    public String getText()
+    public String getAuthor()
     {
-        return text;
+        return author;
     }
 
-    public void setText(String text)
+    public void setAuthor(String author)
     {
-        if(text!=null && !text.isEmpty())
-            this.text = text.trim();
+        if(author!=null && !author.isEmpty())
+            this.author = author.trim();
+    }
+
+    public String getText()
+    {
+        return content;
+    }
+
+    public void setText(String content)
+    {
+        if(content!=null && !content.isEmpty())
+            this.content = content.trim();
     }
 }
 

@@ -130,7 +130,7 @@
 
                     const address = 'http://localhost'
 
-                    axios.get(address+':8080/get/' + type + params)
+                    axios.get(address+':9090/get/' + type + params)
                         .then(function (response)
                         {
                             if(response.data.type == "success")

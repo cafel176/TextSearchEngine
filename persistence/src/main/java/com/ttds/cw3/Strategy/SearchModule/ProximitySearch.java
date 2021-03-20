@@ -10,8 +10,8 @@ public class ProximitySearch extends PhraseSearch
         this.order = order;
     }
 
-    public ProximitySearch(int limit, String pattern) {
-        super(limit, pattern);
+    public ProximitySearch(int limit,int thread, String pattern) {
+        super(limit,thread, pattern);
     }
 
     @Override

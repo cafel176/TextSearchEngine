@@ -51,7 +51,7 @@ public final class ReadXml extends ReadStrategy<ArrayList<Doc>>
                     }
                     else if(tag.equals("DOCNO".toLowerCase()))
                     {
-                        d.setId(str);
+                        d.setName(str);
                     }
                 }
                 d.setText(txt);

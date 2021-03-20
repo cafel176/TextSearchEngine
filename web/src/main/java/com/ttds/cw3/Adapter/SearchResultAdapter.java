@@ -19,6 +19,11 @@ public class SearchResultAdapter<T>
         return result.getDocid();
     }
 
+    public String getDocName()
+    {
+        return result.getDocName();
+    }
+
     public T getValue()
     {
         return result.getValue();

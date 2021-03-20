@@ -9,6 +9,7 @@ import com.ttds.cw3.Tools.DocReader;
 import com.ttds.cw3.Tools.Stemmer;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,7 +17,7 @@ import java.util.ArrayList;
 
 public final class PreProcessing implements PreProcessingInterface
 {
-    private ArrayList<String> stopWords;
+    private List<String> stopWords;
     private Stemmer stemmer;
 
     private DocReader reader;
@@ -27,11 +28,11 @@ public final class PreProcessing implements PreProcessingInterface
     private boolean Bstem = true;
     private String pattern = "[\\w]+";
 
-    public PreProcessing(String filePath,ArrayList<String> category)
+    public PreProcessing(String filePath)
     {
         stemmer = new Stemmer();
         reader = new DocReader(filePath);
-        converter = new DocAnalysis(category);
+        converter = new DocAnalysis();
         terms = new HashMap<>();
     }
 
@@ -43,11 +44,6 @@ public final class PreProcessing implements PreProcessingInterface
     public void setStopWordFile(String fileName, StrategyType type)
     {
         stopWords = converter.txtsfrom(AnalysisFactory.get(type),reader.get(fileName, ReaderFactory.get(type)));
-    }
-
-    public void setCategory(ArrayList<String> category)
-    {
-        converter.setCategory(category);
     }
 
     public void setBremoveStopWords(boolean bremoveStopWords) {

@@ -1,7 +1,8 @@
 package com.ttds.cw3.Tools;
 
-import com.ttds.cw3.Adapter.DataAdapter;
+import com.ttds.cw3.Adapter.DocAdapter;
 import com.ttds.cw3.Adapter.DocVectorAdapter;
+import com.ttds.cw3.Adapter.ModelManagerAdapter;
 import com.ttds.cw3.Adapter.PreProcessingAdapter;
 import com.ttds.cw3.Data.SearchResult;
 import com.ttds.cw3.Factory.RetrievalModelFactory;
@@ -16,17 +17,15 @@ import java.util.Comparator;
 
 public final class RetrievalDriver
 {
-    private DataAdapter data;
+    private int thread;
+    private ModelManagerAdapter m;
 
     private PreProcessingAdapter preProcessing;
 
-    public RetrievalDriver(DataAdapter data, PreProcessingAdapter preProcessing) {
-        this.data = data;
+    public RetrievalDriver(ModelManagerAdapter m, PreProcessingAdapter preProcessing,int thread) {
+        this.m = m;
+        this.thread = thread;
         this.preProcessing = preProcessing;
-    }
-
-    public void setData(DataAdapter data) {
-        this.data = data;
     }
 
     public void setPreProcessing(PreProcessingAdapter preProcessing) {
@@ -35,7 +34,7 @@ public final class RetrievalDriver
 
     public ArrayList<Pair<String, Double>> spaenDatas(RetrievalModelType type, String txt, String param) throws Exception
     {
-        RetrievalModel module = RetrievalModelFactory.get(type);
+        RetrievalModel module = RetrievalModelFactory.get(thread,type);
         SearchResult<Double>[] results =  search(txt,param,module);
         ArrayList<Pair<String, Double>> arr = new ArrayList(Arrays.asList((results)));
         return arr;
@@ -79,10 +78,10 @@ public final class RetrievalDriver
             return null;
         }
 
-        return module.searchAllDoc(str,param,data,preProcessing);
+        return module.searchAllDoc(str,param,preProcessing,m);
     }
 
-    private SearchResult<Double> search(String str,String param, RetrievalModel module, DocVectorAdapter doc) throws Exception
+    private SearchResult<Double> search(String str, String param, RetrievalModel module, DocVectorAdapter doc, DocAdapter docinfo,String other) throws Exception
     {
         if(module==null)
         {
@@ -90,6 +89,6 @@ public final class RetrievalDriver
             return null;
         }
 
-        return module.searchDoc(str,param,data,preProcessing,doc);
+        return module.searchDoc(str,param,preProcessing,doc,docinfo,m,other);
     }
 }

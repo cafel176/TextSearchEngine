@@ -25,6 +25,11 @@ public class DocVectorAdapter
         return dv.getDocid();
     }
 
+    public String getDocName()
+    {
+        return dv.getDocName();
+    }
+
     public HashMap<String, Integer> getTerms()
     {
         return dv.getTerms();

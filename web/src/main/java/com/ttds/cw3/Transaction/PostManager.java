@@ -43,7 +43,7 @@ public final class PostManager
                     MultiValueMap<String,String> params = request.exchange().getRequest().getQueryParams();
                     String txt = params.getFirst("txt").trim();
                     String txt2 = params.getFirst("txt2").trim();
-                    ResponseData<String> re = new ResponseData("docid",txt2,"This is a test");
+                    ResponseData<String> re = new ResponseData("docid",txt,txt2,"This is a test");
                     Mono<ResponseData<String>> reMono = Mono.just(re);
 
                     ServerResponse.BodyBuilder a = ServerResponse.ok();

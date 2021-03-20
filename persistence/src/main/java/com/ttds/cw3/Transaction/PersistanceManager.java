@@ -1,6 +1,5 @@
 package com.ttds.cw3.Transaction;
 
-import com.ttds.cw3.Adapter.DataAdapter;
 import com.ttds.cw3.Adapter.ModelManagerAdapter;
 import com.ttds.cw3.Adapter.PreProcessingAdapter;
 import com.ttds.cw3.Transaction.BoolTree.BoolTree;
@@ -30,12 +29,13 @@ public final class PersistanceManager implements PersistanceManagerInterface
     private BoolTree tree;
     private SymbolManager symbols;
     private PreProcessingAdapter preProcessing;
-    private DataAdapter data;
 
     private SearchDriver search;
     private RetrievalDriver retrieval;
 
     private Properties props;
+    private int sthread = 3;
+    private int rthread = 5;
 
     @Autowired
     public PersistanceManager(ModelManagerAdapter m)
@@ -43,9 +43,6 @@ public final class PersistanceManager implements PersistanceManagerInterface
         this.m = m;
 
         preProcessing = m.getPreProcessing();
-        data = m.getData();
-
-        retrieval = new RetrievalDriver(data,preProcessing);
 
         loadProperties("application.properties");
 
@@ -59,11 +56,16 @@ public final class PersistanceManager implements PersistanceManagerInterface
         {
             props = PropertiesLoaderUtils.loadAllProperties(name);
 
+            sthread = Integer.parseInt(props.getProperty("sthread").trim());
+            rthread = Integer.parseInt(props.getProperty("rthread").trim());
+
             symbols = new SymbolManager(props);
 
             int limit = Integer.parseInt(props.getProperty("limit").trim());
             String pattern = props.getProperty("pattern").trim();
-            search = new SearchDriver(data,preProcessing,limit,pattern);
+
+            search = new SearchDriver(m,preProcessing,limit,sthread,pattern);
+            retrieval = new RetrievalDriver(m,preProcessing,rthread);
 
             success = true;
         }
@@ -81,7 +83,7 @@ public final class PersistanceManager implements PersistanceManagerInterface
     {
         DataType dataType = DataType.Double;
         buildTree(str,dataType);
-        setRetrievalDatas();;
+        setRetrievalDatas();
         ArrayList<SearchResult<Double>> arr = getRetrievalResult(dataType);
         ArrayList<SearchResult<Double>> results = retrieval.sort(arr);
 

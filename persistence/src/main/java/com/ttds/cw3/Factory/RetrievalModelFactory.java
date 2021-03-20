@@ -1,30 +1,33 @@
 package com.ttds.cw3.Factory;
 
-import com.ttds.cw3.Strategy.RetrievalModel.BaseRetrieval;
-import com.ttds.cw3.Strategy.RetrievalModel.RetrievalModel;
-import com.ttds.cw3.Strategy.RetrievalModel.RetrievalModelType;
-import com.ttds.cw3.Strategy.RetrievalModel.TfidfModel;
+import com.ttds.cw3.Strategy.RetrievalModel.*;
 
 public abstract class RetrievalModelFactory
 {
-    public static RetrievalModel get(RetrievalModelType type)
+    public static RetrievalModel get(int thread,RetrievalModelType type)
     {
         RetrievalModel module;
         switch (type)
         {
-            case tfidf: module = getTfidfModel(); break;
-            default: module = getBaseRetrieval(); break;
+            case tfidf: module = getTfidfModel(thread); break;
+            case bm25: module = getBM25Model(thread); break;
+            default: module = getBaseRetrieval(thread); break;
         }
         return module;
     }
 
-    private static RetrievalModel getBaseRetrieval()
+    private static RetrievalModel getBaseRetrieval(int thread)
     {
-        return new BaseRetrieval();
+        return new BaseRetrieval(thread);
     }
 
-    private static RetrievalModel getTfidfModel()
+    private static RetrievalModel getTfidfModel(int thread)
     {
-        return new TfidfModel();
+        return new TfidfModel(thread);
+    }
+
+    private static BM25Model getBM25Model(int thread)
+    {
+        return new BM25Model(thread);
     }
 }

@@ -13,18 +13,19 @@ import java.util.Comparator;
 
 public final class SearchDriver
 {
-    private DataAdapter data;
-
+    private ModelManagerAdapter m;
     private int limit;
+    private int thread;
     private String pattern;
 
     private PreProcessingAdapter preProcessing;
 
-    public SearchDriver(DataAdapter data, PreProcessingAdapter preProcessing,int limit,String pattern)
+    public SearchDriver(ModelManagerAdapter m, PreProcessingAdapter preProcessing,int limit,int thread,String pattern)
     {
         this.limit = limit;
         this.pattern = pattern;
-        this.data = data;
+        this.m = m;
+        this.thread = thread;
         this.preProcessing = preProcessing;
     }
 
@@ -36,17 +37,13 @@ public final class SearchDriver
         this.pattern = pattern;
     }
 
-    public void setData(DataAdapter data) {
-        this.data = data;
-    }
-
     public void setPreProcessing(PreProcessingAdapter preProcessing) {
         this.preProcessing = preProcessing;
     }
 
     public ArrayList<SearchResult<Boolean>> spaenDatas(SearchModuleType type, String txt,String param, ModelManagerAdapter m) throws Exception
     {
-        SearchModule module = SearchModuleFactory.get(type,limit,pattern);
+        SearchModule module = SearchModuleFactory.get(type,limit,thread,pattern);
         SearchResult<Boolean>[] results =  search(txt,param,module,m);
         ArrayList<SearchResult<Boolean>> arr = new ArrayList(Arrays.asList((results)));
         return arr;
@@ -85,7 +82,7 @@ public final class SearchDriver
             return null;
         }
 
-        return module.searchAllDoc(str,param,data,preProcessing,m);
+        return module.searchAllDoc(str,param,preProcessing,m);
     }
 
     private SearchResult<Boolean> search(String str,String param, SearchModule module, DocVectorAdapter doc, DocAdapter docinfo) throws Exception
@@ -96,6 +93,6 @@ public final class SearchDriver
             return null;
         }
 
-        return module.searchDoc(str,param,data,preProcessing,doc,docinfo);
+        return module.searchDoc(str,param,preProcessing,doc,docinfo,m);
     }
 }

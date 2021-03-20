@@ -10,6 +10,10 @@ public class DocAdapter
         this.doc = doc;
     }
 
+    public DocAdapter(Object doc) {
+        this.doc = (DocInterface)doc;
+    }
+
     public void setDoc(DocInterface doc) {
         this.doc = doc;
     }
@@ -17,6 +21,11 @@ public class DocAdapter
     public String getId()
     {
         return doc.getId();
+    }
+
+    public String getName()
+    {
+        return doc.getName();
     }
 
     public String getCategory()
@@ -27,5 +36,10 @@ public class DocAdapter
     public String getText()
     {
         return doc.getText();
+    }
+
+    public String getAuthor()
+    {
+        return doc.getAuthor();
     }
 }

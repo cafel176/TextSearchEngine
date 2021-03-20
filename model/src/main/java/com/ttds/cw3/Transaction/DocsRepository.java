@@ -1,148 +1,101 @@
 package com.ttds.cw3.Transaction;
 
-import com.ttds.cw3.Data.Data;
+import com.ttds.cw3.DB.DocDB;
+import com.ttds.cw3.DB.DvectorDB;
+import com.ttds.cw3.DB.TvectorDB;
 import com.ttds.cw3.Data.Doc;
-import com.ttds.cw3.Factory.AnalysisFactory;
-import com.ttds.cw3.Factory.ReaderFactory;
-import com.ttds.cw3.Factory.WriterFactory;
-import com.ttds.cw3.Strategy.StrategyType;
-import com.ttds.cw3.Tools.DocAnalysis;
-import com.ttds.cw3.Tools.DocReader;
-import com.ttds.cw3.Tools.DocWriter;
+import com.ttds.cw3.Data.DocVector;
+import com.ttds.cw3.Data.TermVector;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Repository;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 
+@Component
 public final class DocsRepository
 {
-    private DocWriter writer;
-    private DocReader reader;
-    private DocAnalysis converter;
+    private DocDB docDB;
+    private DvectorDB dvs;
+    private TvectorDB terms;
 
-    private Data data;
-    private HashMap<String,Doc> docList;
-
-    public DocsRepository(String savePath, ArrayList<String> category)
+    @Autowired
+    public DocsRepository(DocDB docDB, DvectorDB dvDB, TvectorDB tvDB)
     {
-        data = new Data();
-        writer = new DocWriter(savePath);
-        reader = new DocReader(savePath);
-        converter = new DocAnalysis(category);
-        docList = new HashMap<>();
+        this.docDB = docDB;
+        this.dvs = dvDB;
+        this.terms = tvDB;
     }
 
-    public void setSavePath(String file)
+    public void addDocVector(String docid,String docName, String term)
     {
-        writer.setFilePath(file);
-    }
-
-    public void setCategory(ArrayList<String> category)
-    {
-        converter.setCategory(category);
-    }
-
-    public void addDocVector(String docid, String term)
-    {
-        data.addDocVector(docid,term);
+        if(dvs.exists(docid))
+        {
+            DocVector dv = dvs.find(docid);
+            dv.addTerm(term);
+            dvs.save(dv);
+        }
+        else{
+            DocVector dv = new DocVector(docid,docName);
+            dv.addTerm(term);
+            dvs.insert(dv);
+        }
     }
 
     public void addTermVector(String term, String docid, int pos)
     {
-        data.addTermVector(term,docid,pos);
+        if(terms.exists(term))
+        {
+            TermVector t = terms.find(term);
+            t.addPos(docid,pos);
+            terms.save(t);
+        }
+        else
+        {
+            TermVector t = new TermVector(term);
+            t.addPos(docid, pos);
+            terms.insert(t);
+        }
     }
 
-    public Data getData() {
-        return data;
-    }
-
-    public void clearDataAndDoc()
+    public Doc addDoc(Doc doc)
     {
-        data.clear();
-        docList.clear();
-    }
-
-    public void addDoc(Doc doc)
-    {
-        docList.put(doc.getId(),doc);
+        return docDB.insert(doc);
     }
 
     public Doc getDoc(String id)
     {
-        return docList.get(id);
+        return docDB.findById(id);
     }
 
     public boolean containDoc(String id)
     {
-        return docList.containsKey(id);
+        return docDB.existsById(id);
     }
 
-    public void saveData(String fileName, ArrayList<String> category, StrategyType type)
+    public long countDoc()
     {
-        String before = getCategoryBefore(category);
-
-        writer.write(before+fileName, WriterFactory.get(type), converter.save(AnalysisFactory.get(type), data));
+        return docDB.count();
     }
 
-    public boolean loadData(String fileName, ArrayList<String> category, StrategyType type)
+    public DocVector getDvByDocid(String docid){return dvs.find(docid);}
+
+    public TermVector getTermByTerm(String term){return terms.find(term);}
+
+    public List<TermVector> getTerms(){return terms.findAll();}
+
+    public List<DocVector> getDvs(){return dvs.findAll();}
+
+    public List<Doc> getDocs(){return docDB.findAll();}
+
+    public long getDocSize(){return docDB.count();}
+
+    public long getTermsSize(){return terms.count();}
+
+    public void clear()
     {
-        String before = getCategoryBefore(category);
-
-        Data _data = converter.load(AnalysisFactory.get(type), reader.get(before+fileName, ReaderFactory.get(type)));
-
-        if(_data!=null)
-        {
-            data = _data;
-            return true;
-        }
-        else
-            return false;
-    }
-
-    public void saveDoc(String fileName, ArrayList<String> category, StrategyType type)
-    {
-        String before = getCategoryBefore(category);
-
-        Iterator iter = docList.entrySet().iterator();
-        ArrayList<Doc> list = new ArrayList<>();
-        while (iter.hasNext())
-        {
-            HashMap.Entry entry = (HashMap.Entry) iter.next();
-            list.add((Doc)entry.getValue());
-        }
-
-        writer.write(before+fileName, WriterFactory.get(type), converter.saveDocs(AnalysisFactory.get(type), list));
-    }
-
-    public boolean loadDoc(String fileName, ArrayList<String> category, StrategyType type)
-    {
-        String before = getCategoryBefore(category);
-
-        ArrayList<Doc> _data = converter.loadDocs(AnalysisFactory.get(type), reader.get(before+fileName, ReaderFactory.get(type)));
-
-        if(_data!=null)
-        {
-            for(int i=0;i< _data.size();i++)
-            {
-                Doc doc = _data.get(i);
-                docList.put(doc.getId(),doc);
-            }
-            return true;
-        }
-        else
-            return false;
-    }
-
-    private String getCategoryBefore(ArrayList<String> category)
-    {
-        String before = "";
-        if(category != null)
-            for(int i=0;i<category.size();i++)
-            {
-                String c = category.get(i);
-                if(!c.isEmpty())
-                    before += c + "_";
-            }
-        return before;
+        docDB.deleteAll();
+        dvs.deleteAll();
+        terms.deleteAll();
     }
 }

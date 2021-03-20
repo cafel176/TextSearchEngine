@@ -9,6 +9,7 @@ import com.ttds.cw3.Strategy.Convert.AnalysisFromXml;
 import com.ttds.cw3.Strategy.Convert.AnalysisStrategy;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public abstract class AnalysisFactory
 {
@@ -25,7 +26,7 @@ public abstract class AnalysisFactory
         return converter;
     }
 
-    private static AnalysisStrategy<ArrayList<String>> getTxtStrategey()
+    private static AnalysisStrategy<List<String>> getTxtStrategey()
     {
         return new AnalysisFromStrings();
     }
