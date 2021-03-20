@@ -110,6 +110,7 @@ public final class BM25Model extends RetrievalModel
                     continue;
                 alldl += docinfo.getText().length();
                 N +=1;
+                break;
             }
         }
 
