@@ -209,11 +209,12 @@ public final class ModelManager implements ModelManagerInterface
                 ArrayList<Integer> pos = (ArrayList<Integer>)entry.getValue();
 
                 // 互斥锁
-                for(int j=0;j<pos.size();j++)
+                byte[] lock2 = new byte[0];
+                synchronized(lock2)
                 {
-                    byte[] lock2 = new byte[0];
-                    synchronized(lock2)
+                    for(int j=0;j<pos.size();j++)
                     {
+
                         docsRepository.addTermVector(term,doc.getId(),pos.get(j));
                         docsRepository.addDocVector(doc.getId(),doc.getName(), term);
                     }
