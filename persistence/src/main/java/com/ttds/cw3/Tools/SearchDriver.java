@@ -49,24 +49,34 @@ public final class SearchDriver
         return arr;
     }
 
-    public ArrayList<SearchResult<Boolean>> sort(ArrayList<SearchResult<Boolean>> arr)
+    public ArrayList<SearchResult<Boolean>> clip(ArrayList<SearchResult<Boolean>> arr)
     {
         ArrayList<SearchResult<Boolean>> results = new ArrayList<>();
-        for(int i=0;i<arr.size();i++)
-        {
-            if(arr.get(i).getValue())
-            {
-                results.add(arr.get(i));
+        for (int i = 0; i < arr.size(); i++) {
+            SearchResult<Boolean> a = arr.get(i);
+            if (a != null && a.getValue()) {
+                results.add(a);
             }
         }
+        return results;
+    }
 
+    public ArrayList<SearchResult<Boolean>> sort(ArrayList<SearchResult<Boolean>> arr)
+    {
+        ArrayList<SearchResult<Boolean>> results = arr;
         Collections.sort(results ,new Comparator<SearchResult<Boolean>>()
         {
             @Override
             public int compare(SearchResult<Boolean> s1, SearchResult<Boolean> s2)
             {
                 int flag;
-                flag = Integer.parseInt(s1.getDocid())-Integer.parseInt(s2.getDocid());
+                String n1 = s1.getDocName();
+                String n2 = s2.getDocName();
+                if(n1==null||n1.isEmpty())
+                    n1 = s1.getDocid();
+                if(n2==null||n2.isEmpty())
+                    n2 = s2.getDocid();
+                flag = Integer.parseInt(n1)-Integer.parseInt(n2);
                 return flag;
             }
         });

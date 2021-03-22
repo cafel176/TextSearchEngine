@@ -6,7 +6,7 @@ import java.util.ArrayList;
 public final class ReadTxt extends ReadStrategy<ArrayList<String>>
 {
     @Override
-    public ArrayList<String> read(String file,String encoding)
+    public ArrayList<String> read(String file,String encoding,int max)
     {
         ArrayList<String> list = new ArrayList<String>();
 
@@ -16,7 +16,7 @@ public final class ReadTxt extends ReadStrategy<ArrayList<String>>
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, encoding));
 
             String str;
-            while((str = bufferedReader.readLine()) != null)
+            while((str = bufferedReader.readLine()) != null && list.size()<max)
             {
                 list.add(str);
             }

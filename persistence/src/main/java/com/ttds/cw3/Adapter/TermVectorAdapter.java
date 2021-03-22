@@ -4,6 +4,7 @@ import com.ttds.cw3.Interface.TermVectorInterface;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TermVectorAdapter
 {
@@ -31,7 +32,7 @@ public class TermVectorAdapter
         return tv.getDf();
     }
 
-    public HashMap<String, ArrayList<Integer>> getPostings()
+    public ConcurrentHashMap<String, ArrayList<Integer>> getPostings()
     {
         return tv.getPostings();
     }

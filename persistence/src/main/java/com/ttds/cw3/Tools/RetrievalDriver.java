@@ -32,25 +32,33 @@ public final class RetrievalDriver
         this.preProcessing = preProcessing;
     }
 
-    public ArrayList<Pair<String, Double>> spaenDatas(RetrievalModelType type, String txt, String param) throws Exception
+    public ArrayList<SearchResult<Double>> spaenDatas(RetrievalModelType type, String txt, String param) throws Exception
+    {
+        return spaenDatas(type, txt, param,null);
+    }
+
+    public ArrayList<SearchResult<Double>> spaenDatas(RetrievalModelType type, String txt, String param, ArrayList<String> filter) throws Exception
     {
         RetrievalModel module = RetrievalModelFactory.get(thread,type);
-        SearchResult<Double>[] results =  search(txt,param,module);
-        ArrayList<Pair<String, Double>> arr = new ArrayList(Arrays.asList((results)));
-        return arr;
+        SearchResult<Double>[] results =  search(txt,param,module,filter);
+        return new ArrayList(Arrays.asList((results)));
+    }
+
+    public ArrayList<SearchResult<Double>> clip(ArrayList<SearchResult<Double>> arr)
+    {
+        ArrayList<SearchResult<Double>> results = new ArrayList<>();
+        for (int i = 0; i < arr.size(); i++) {
+            SearchResult<Double> a = arr.get(i);
+            if (a != null && a.getValue() > 0.0001) {
+                results.add(a);
+            }
+        }
+        return results;
     }
 
     public ArrayList<SearchResult<Double>> sort(ArrayList<SearchResult<Double>> arr)
     {
-        ArrayList<SearchResult<Double>> results = new ArrayList<>();
-        for(int i=0;i<arr.size();i++)
-        {
-            if(arr.get(i).getValue()>0.0001)
-            {
-                results.add(arr.get(i));
-            }
-        }
-
+        ArrayList<SearchResult<Double>> results = arr;
         Collections.sort(results ,new Comparator<SearchResult<Double>>()
         {
             @Override
@@ -59,8 +67,14 @@ public final class RetrievalDriver
                 int flag;
                 flag = Double.compare(s2.getValue(),s1.getValue());
 
-                if(Math.abs(flag)<0.0001){
-                    flag = (int)(Double.parseDouble(s2.getDocid())-Double.parseDouble(s1.getDocid()));
+                if(flag==0){
+                    String n1 = s1.getDocName();
+                    String n2 = s2.getDocName();
+                    if(n1==null||n1.isEmpty())
+                        n1 = s1.getDocid();
+                    if(n2==null||n2.isEmpty())
+                        n2 = s2.getDocid();
+                    flag = Integer.parseInt(n2)-Integer.parseInt(n1);
                 }
 
                 return flag;
@@ -70,7 +84,7 @@ public final class RetrievalDriver
         return results;
     }
 
-    private SearchResult<Double>[] search(String str,String param, RetrievalModel module) throws Exception
+    private SearchResult<Double>[] search(String str,String param, RetrievalModel module, ArrayList<String> filter) throws Exception
     {
         if(module==null)
         {
@@ -78,7 +92,7 @@ public final class RetrievalDriver
             return null;
         }
 
-        return module.searchAllDoc(str,param,preProcessing,m);
+        return module.searchAllDoc(str,param,preProcessing,m,filter);
     }
 
     private SearchResult<Double> search(String str, String param, RetrievalModel module, DocVectorAdapter doc, DocAdapter docinfo,String other) throws Exception

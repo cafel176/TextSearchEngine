@@ -7,11 +7,11 @@ import java.util.ArrayList;
 
 public abstract class ReadStrategy<T>
 {
-    public abstract T read(String file,String encoding);
+    public abstract T read(String file,String encoding,int max);
 
-    public T read(String file)
+    public T read(String file,int max)
     {
         String encoding = "UTF-8";
-        return read(file, encoding);
+        return read(file, encoding,max);
     }
 }

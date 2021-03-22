@@ -8,5 +8,5 @@ public interface TermVectorInterface
 {
     String getTerm();
     int getDf();
-    HashMap<String, ArrayList<Integer>> getPostings();
+    ConcurrentHashMap<String, ArrayList<Integer>> getPostings();
 }

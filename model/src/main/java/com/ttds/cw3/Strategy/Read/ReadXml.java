@@ -15,7 +15,7 @@ import org.dom4j.io.SAXReader;
 public final class ReadXml extends ReadStrategy<ArrayList<Doc>>
 {
     @Override
-    public ArrayList<Doc> read(String file, String encoding)
+    public ArrayList<Doc> read(String file, String encoding,int max)
     {
         ArrayList<Doc> list = new ArrayList<Doc>();
 
@@ -29,7 +29,7 @@ public final class ReadXml extends ReadStrategy<ArrayList<Doc>>
             //3.获取根节点
             Element rootElement = document.getRootElement();
             Iterator iterator = rootElement.elementIterator();
-            while (iterator.hasNext())
+            while (iterator.hasNext() && list.size()<max)
             {
                 Element stu = (Element) iterator.next();
                 Iterator iterator1 = stu.elementIterator();

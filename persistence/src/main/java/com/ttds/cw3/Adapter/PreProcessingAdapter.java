@@ -4,6 +4,7 @@ import com.ttds.cw3.Interface.PreProcessingInterface;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class PreProcessingAdapter
 {
@@ -22,7 +23,7 @@ public class PreProcessingAdapter
         pp.doProcessing(text);
     }
 
-    public HashMap<String, ArrayList<Integer>> getTerms()
+    public ConcurrentHashMap<String, ArrayList<Integer>> getTerms()
     {
         return pp.getTerms();
     }

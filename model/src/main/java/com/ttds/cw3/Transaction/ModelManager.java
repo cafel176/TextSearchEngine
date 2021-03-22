@@ -1,6 +1,8 @@
 package com.ttds.cw3.Transaction;
 
 import com.ttds.cw3.Data.Doc;
+import com.ttds.cw3.Data.DocVector;
+import com.ttds.cw3.Data.TermVector;
 import com.ttds.cw3.Factory.AnalysisFactory;
 import com.ttds.cw3.Factory.ReaderFactory;
 import com.ttds.cw3.Interface.*;
@@ -12,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.io.*;
 import java.util.*;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -24,14 +27,16 @@ import org.springframework.stereotype.Component;
 public final class ModelManager implements ModelManagerInterface
 {
     private String filePath = "assets/";
-    private String stopWordFile = "englishST.txt";
-    private StrategyType stopWordReadType = StrategyType.txt;
 
-    private PreProcessing preProcessing;
     private DocsRepository docsRepository;
     private DocReader reader;
     private DocAnalysis converter;
     private Properties props;
+
+    private List<String> stopWords;
+    private boolean BremoveStopWords = true;
+    private boolean Bstem = true;
+    private String pattern = "[\\w]+";
 
     private final AtomicInteger idGenerator;
 
@@ -40,7 +45,7 @@ public final class ModelManager implements ModelManagerInterface
     @Autowired
     public ModelManager(DocsRepository docsRepository)
     {
-        this.idGenerator = new AtomicInteger();
+        this.idGenerator = new AtomicInteger((int)docsRepository.getDocDBSize()+1);
         this.docsRepository = docsRepository;
 
         loadProperties("application.properties");
@@ -59,7 +64,6 @@ public final class ModelManager implements ModelManagerInterface
 
         filePath = props.getProperty("filePath").trim();
 
-        preProcessing.setFilePath(filePath);
         reader.setFilePath(filePath);
 
         return true;
@@ -73,10 +77,9 @@ public final class ModelManager implements ModelManagerInterface
         }
 
         String[] st = props.getProperty("stopWordFile").trim().split("#");
-        stopWordFile = st[0].trim();
-        stopWordReadType = StrategyType.valueOf(st[1].trim());
-
-        preProcessing.setStopWordFile(stopWordFile, stopWordReadType);
+        String stopWordFile = st[0].trim();
+        StrategyType stopWordReadType = StrategyType.valueOf(st[1].trim());
+        stopWords = converter.txtsfrom(AnalysisFactory.get(stopWordReadType),reader.get(stopWordFile, ReaderFactory.get(stopWordReadType)));
 
         return true;
     }
@@ -90,11 +93,11 @@ public final class ModelManager implements ModelManagerInterface
             reloadFiles = Boolean.parseBoolean(props.getProperty("reloadFiles").trim());
         }
 
-        if(reloadFiles || docsRepository.countDoc()<=0)
+        if(reloadFiles || docsRepository.getDocDBSize()<=0)
         {
+            docsRepository.clear();
             if(props!=null)
             {
-                docsRepository.clear();
                 String token = " ";
                 String[] st = props.getProperty("dataFiles").trim().split(",");
                 for(int i=0;i<st.length;i++)
@@ -115,31 +118,33 @@ public final class ModelManager implements ModelManagerInterface
                     if(st2.length>2)
                         token = st2[2].trim();
 
+                    System.out.println("文件"+file+"数据读取:");
                     doProcess(file,type, token);
+                    System.out.println();
                 }
             }
         }
+
+        docsRepository.initFromDB();
     }
 
     public boolean loadProperties(String name)
     {
         boolean success;
-        boolean removeStopWords = true;
-        boolean stem = true;
-        String pattern = "[^\\w]";
+        String[] st = {"englishST.txt","txt"};
+        int max = 100000;
         try
         {
             props = PropertiesLoaderUtils.loadAllProperties(name);
             filePath = props.getProperty("filePath").trim();
             thread = Integer.parseInt(props.getProperty("thread").trim());
+            max = Integer.parseInt(props.getProperty("max").trim());
 
-            String[] st = props.getProperty("stopWordFile").trim().split("#");
-            stopWordFile = st[0].trim();
-            stopWordReadType = StrategyType.valueOf(st[1].trim());
+            st = props.getProperty("stopWordFile").trim().split("#");
 
             pattern = props.getProperty("pattern").trim();
-            removeStopWords = Boolean.parseBoolean(props.getProperty("removeStopWords").trim());
-            stem = Boolean.parseBoolean(props.getProperty("stem").trim());
+            BremoveStopWords = Boolean.parseBoolean(props.getProperty("removeStopWords").trim());
+            Bstem = Boolean.parseBoolean(props.getProperty("stem").trim());
 
             success = true;
         }
@@ -151,20 +156,19 @@ public final class ModelManager implements ModelManagerInterface
             e.printStackTrace();
         }
 
-        preProcessing = new PreProcessing(filePath);
-        preProcessing.setStopWordFile(stopWordFile, stopWordReadType);
-        preProcessing.setBremoveStopWords(removeStopWords);
-        preProcessing.setBstem(stem);
-        preProcessing.setPattern(pattern);
-
-        reader = new DocReader(filePath);
+        reader = new DocReader(filePath,max);
         converter = new DocAnalysis();
+
+        String stopWordFile = st[0].trim();
+        StrategyType stopWordReadType = StrategyType.valueOf(st[1].trim());
+        stopWords = converter.txtsfrom(AnalysisFactory.get(stopWordReadType),reader.get(stopWordFile, ReaderFactory.get(stopWordReadType)));
 
         return success;
     }
 
-    private void doProcess(int num, int start, int end, List<Doc> list)
+    private void doProcess(int finish, int num, int start, int end, List<Doc> list)
     {
+        PreProcessing preProcessing = new PreProcessing(stopWords,BremoveStopWords,Bstem,pattern);
         for(int i=start;i<end;i++)
         {
             // 互斥锁
@@ -173,93 +177,74 @@ public final class ModelManager implements ModelManagerInterface
             synchronized(lock)
             {
                 int id = idGenerator.incrementAndGet();
-                while (docsRepository.containDoc(Integer.toString(id))) {
+                while (docsRepository.containDoc(Integer.toString(id)))
+                {
                     id = idGenerator.incrementAndGet();
                 }
                 doc.setId(Integer.toString(id));
-                docsRepository.addDoc(doc);
+                docsRepository.addDoc(id,doc);
             }
 
-            HashMap<String,ArrayList<Integer>> tokens = new HashMap<>();
-            synchronized(preProcessing)
-            {
-                preProcessing.doProcessing(doc.getText());
-                if(thread<=0)
-                    tokens = preProcessing.getTerms();
-                else
-                {
-                    HashMap<String,ArrayList<Integer>> map = preProcessing.getTerms();
-
-                    Iterator iter = map.entrySet().iterator();
-                    while (iter.hasNext())
-                    {
-                        HashMap.Entry entry = (HashMap.Entry) iter.next();
-                        String key = (String)entry.getKey();
-                        ArrayList<Integer> value = deepCopy((ArrayList<Integer>)entry.getValue());
-                        tokens.put(key,value);
-                    }
-                }
-            }
+            preProcessing.doProcessing(doc.getText());
+            ConcurrentHashMap<String,ArrayList<Integer>> tokens = preProcessing.getTerms();
 
             Iterator iter = tokens.entrySet().iterator();
             while (iter.hasNext())
             {
-                HashMap.Entry entry = (HashMap.Entry) iter.next();
+                ConcurrentHashMap.Entry entry = (ConcurrentHashMap.Entry) iter.next();
                 String term = (String)entry.getKey();
                 ArrayList<Integer> pos = (ArrayList<Integer>)entry.getValue();
 
                 // 互斥锁
-                byte[] lock2 = new byte[0];
-                synchronized(lock2)
+                for(int j=0;j<pos.size();j++)
                 {
-                    for(int j=0;j<pos.size();j++)
+                    byte[] lock2 = new byte[0];
+                    synchronized(lock2)
                     {
-
                         docsRepository.addTermVector(term,doc.getId(),pos.get(j));
                         docsRepository.addDocVector(doc.getId(),doc.getName(), term);
                     }
                 }
             }
-
-            System.out.printf("\b\b\b\b\b"+String.format("%.2f",100.0*docsRepository.getDocSize()/num));
+            System.out.print("\b\b\b\b\b\b\b\b\b\b\b"+"总进度:"+String.format("%.2f",100.0*(docsRepository.getDocSize()+finish)/num)+"%");
         }
     }
 
     private void doProcess(String fileName, StrategyType type, String token)
     {
-        ArrayList data = (ArrayList)reader.get(fileName, ReaderFactory.get(type));
+        List data = (ArrayList)reader.get(fileName, ReaderFactory.get(type));
         final int max = 10000;
         int size = data.size();
         int all = (int)Math.ceil(1.0*size/max);
         for(int k=0;k<all;k++)
         {
-            //long startTime = System.currentTimeMillis();
-
-            int start = k*max;
-            int end = (k+1)*max;
-            if(end>size)
-                end = size;
-            List sub = data.subList(start,end);
+            int end = max;
+            if(end>data.size())
+                end = data.size();
+            List sub = data.subList(0,end);
             List<Doc> list = converter.process(AnalysisFactory.get(type),sub,token);
             int num = list.size();
             if(list==null)
-                return;
+                continue;
 
             if(thread<=0)
-                doProcess(size, 0, num, list);
+                doProcess(k*max,size, 0, num, list);
             else
             {
                 ExecutorService pool = Executors.newCachedThreadPool();
                 int per = num/thread;
+                if(per < 1)
+                    per = 1;
                 for (int s = 0, e = per; e <= num;)
                 {
                     int finalS = s, finalE = e;
+                    int finalK = k;
                     pool.execute(new Runnable() {
                         @Override
                         public void run()
                         {
                             final int start = finalS,end = finalE;
-                            doProcess(size, start, end, list);
+                            doProcess(finalK *max,size, start, end, list);
                         }
                     });
 
@@ -280,14 +265,17 @@ public final class ModelManager implements ModelManagerInterface
                 }
             }
 
-            //long endTime = System.currentTimeMillis();
-            //System.out.println("时间："+(endTime-startTime));
+            System.out.println();
+            docsRepository.pushDB(thread,0);
+            docsRepository.pushDB(thread,1);
+            docsRepository.pushDB(thread,2);
+            data = data.subList(end,data.size());
         }
     }
 
     public PreProcessingInterface getPreProcessing()
     {
-        return preProcessing;
+        return new PreProcessing(stopWords,BremoveStopWords,Bstem,pattern);
     }
 
     public DocInterface getDoc(String id)
@@ -298,28 +286,44 @@ public final class ModelManager implements ModelManagerInterface
     public DocVectorInterface getDvByDocid(String docid){return docsRepository.getDvByDocid(docid);}
 
     public TermVectorInterface getTermByTerm(String term){return docsRepository.getTermByTerm(term);}
+/*
+    public ArrayList<DocInterface> getDocsById(int pageNo, int pageSize)
+    {
+        ArrayList y = docsRepository.getDocsById(pageNo,pageSize);
+        return (ArrayList<DocInterface>)y;
+    }
+
+    public ArrayList<DocInterface> getDocsByCategory(int pageNo, int pageSize)
+    {
+        ArrayList y = docsRepository.getDocsByCategory(pageNo,pageSize);
+        return (ArrayList<DocInterface>)y;
+    }
+
+    public ArrayList<DocInterface> getDocsByAuthor(int pageNo, int pageSize)
+    {
+        ArrayList y = docsRepository.getDocsByAuthor(pageNo,pageSize);
+        return (ArrayList<DocInterface>)y;
+    }
+*/
+    public ArrayList<TermVectorInterface> getTerms()
+    {
+        ArrayList y = docsRepository.getTerms();
+        return (ArrayList<TermVectorInterface>)y;
+    }
+
+    public ArrayList<DocVectorInterface> getDvs()
+    {
+        ArrayList y = docsRepository.getDvs();
+        return (ArrayList<DocVectorInterface>)y;
+    }
+
+    public long getDvsSize(){
+        return docsRepository.getDvsSize();
+    }
 
     public long getDocSize(){return docsRepository.getDocSize();}
 
     public long getTermsSize(){return docsRepository.getTermsSize();}
-
-    public List<TermVectorInterface> getTerms()
-    {
-        List y = docsRepository.getTerms();
-        return (List<TermVectorInterface>)y;
-    }
-
-    public List<DocVectorInterface> getDvs()
-    {
-        List y = docsRepository.getDvs();
-        return (List<DocVectorInterface>)y;
-    }
-
-    public List<DocInterface> getDocs()
-    {
-        List y = docsRepository.getDocs();
-        return (List<DocInterface>)y;
-    }
 
     public static <T> ArrayList<T> deepCopy(ArrayList<T> srcList) {
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();

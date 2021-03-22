@@ -5,19 +5,19 @@ import com.ttds.cw3.Interface.SearchResultInterface;
 public class SearchResult<T extends Object> implements SearchResultInterface
 {
     private String docid;
-    private String docName;
+    private String docname;
     private String desc;
     private T value;
 
-    public SearchResult(String docid, String docName, T value) {
+    public SearchResult(String docid, String docname, T value) {
         this.docid = docid;
-        this.docName = docName;
+        this.docname = docname;
         this.value = value;
     }
 
     public SearchResult(SearchResult other) {
         this.docid = other.getDocid();
-        this.docName = other.getDocName();
+        this.docname = other.getDocName();
         this.value = (T)other.getValue();
         this.desc = other.getDesc();
     }
@@ -27,7 +27,7 @@ public class SearchResult<T extends Object> implements SearchResultInterface
     }
 
     public String getDocName() {
-        return docName;
+        return docname;
     }
 
     public T getValue() {

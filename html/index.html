@@ -21,6 +21,7 @@
                     <li id="type" class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" style="margin-right:20px">{{txt}}</a>
                         <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                            <a v-on:click="setType('all')" class="dropdown-item" href="#">all</a>
                             <a v-on:click="setType('search')" class="dropdown-item" href="#">search</a>
                             <a v-on:click="setType('retrieval')" class="dropdown-item" href="#">retrieval</a>
                         </div>
@@ -54,7 +55,7 @@
                     <div class="col-md-12" style="margin-bottom:10px">
                         <h3>{{hint}}</h3>
                     </div>
-                    <todo-item v-for="item in list" :key="item.docid" :docid="item.docid" :desc="item.desc"></todo-item>
+                    <todo-item v-for="item in list" :key="item.docname" :docname="item.docname" :desc="item.desc"></todo-item>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
@@ -89,9 +90,9 @@
 
     <script type="text/javascript">
         let value = localStorage.getItem("type");
-        var type = (value == undefined || value == null) ? "retrieval" : value //"search"
+        var type = (value == undefined || value == null) ? "all" : value //"search"
         value = localStorage.getItem("txt");
-        var txt = (value == undefined || value == null) ? 'TFIDF income tax reduction' : value
+        var txt = (value == undefined || value == null) ? 'income tax reduction' : value
         value = localStorage.getItem("everyPage");
         var everyPage = (value == undefined || value == null) ? 10 : value
 
@@ -105,8 +106,8 @@
         const maxShowPage = 5
 
         Vue.component('todo-item', {
-            template: '<div class="col-md-12" style="margin: 10px 0"><h3>{{docid}}</h3><span class="badge badge-success" style="margin-right:10px">Label</span><p class="lead">{{desc}}</p></div>',
-            props: ['docid','desc']
+            template: '<div class="col-md-12" style="margin: 10px 0"><h3>{{docname}}</h3><span class="badge badge-success" style="margin-right:10px">Label</span><p class="lead">{{desc}}</p></div>',
+            props: ['docname','desc']
         })
         
         Vue.component('page-item', {
@@ -130,7 +131,7 @@
 
                     const address = 'http://localhost'
 
-                    axios.get(address+':9090/get/' + type + params)
+                    axios.get(address+':8080/get/' + type + params)
                         .then(function (response)
                         {
                             if(response.data.type == "success")
@@ -140,6 +141,7 @@
                                 that.list = response.data.datas;
                                 pageNum = Math.ceil(resultNum / everyPage);
                                 pages.spawnAfter();
+                                console.log(that.list);
                             }
                             else{
                                 pages.isShow = false;

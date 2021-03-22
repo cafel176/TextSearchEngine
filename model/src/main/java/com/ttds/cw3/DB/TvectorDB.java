@@ -3,6 +3,9 @@ package com.ttds.cw3.DB;
 import com.ttds.cw3.Data.DocVector;
 import com.ttds.cw3.Data.TermVector;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +27,14 @@ public class TvectorDB
     {
         Optional<TermVector> opt = this.repository.findById(term);
         return opt.orElse(null);
+    }
+
+    public List<TermVector> find(int pageNo, int pageSize)
+    {
+        Pageable paging = PageRequest.of(pageNo, pageSize);
+        Page<TermVector> pages = this.repository.findAll(paging);
+        List<TermVector> list = pages.getContent();
+        return list;
     }
 
     public List<TermVector> findAll()

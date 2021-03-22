@@ -25,6 +25,19 @@ public class PersistanceManagerAdapter
         return manager.loadProperties(name);
     }
 
+    public Pair<OtherParamsAdapter,ArrayList<SearchResultAdapter<Double>>> search(String str, int start, int end) throws Exception
+    {
+        Pair<OtherParamsInterface,ArrayList<SearchResultInterface<Double>>> p = manager.search(str,start,end);
+        ArrayList<SearchResultInterface<Double>> arr = p.getValue();
+        OtherParamsAdapter param = new OtherParamsAdapter(p.getKey());
+        ArrayList<SearchResultAdapter<Double>> re = new ArrayList<>();
+        for(int i=0;i<arr.size();i++)
+        {
+            re.add(new SearchResultAdapter<>(arr.get(i)));
+        }
+        return new Pair<>(param,re);
+    }
+
     public Pair<OtherParamsAdapter,ArrayList<SearchResultAdapter<Double>>> searchByRetrievalModel(String str, int start, int end) throws Exception
     {
         Pair<OtherParamsInterface,ArrayList<SearchResultInterface<Double>>> p = manager.searchByRetrievalModel(str,start,end);

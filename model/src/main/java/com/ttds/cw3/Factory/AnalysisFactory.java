@@ -36,7 +36,7 @@ public abstract class AnalysisFactory
         return new AnalysisFromJSON();
     }
 
-    private static AnalysisStrategy<ArrayList<Doc>> getXmlStrategey()
+    private static AnalysisStrategy<List<Doc>> getXmlStrategey()
     {
         return new AnalysisFromXml();
     }

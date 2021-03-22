@@ -1,6 +1,7 @@
 package com.ttds.cw3.DB;
 
 import com.ttds.cw3.Data.Doc;
+import com.ttds.cw3.Data.DocVector;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -40,6 +41,14 @@ public class DocDB
     public List<Doc> findAll()
     {
         return repository.findAll();
+    }
+
+    public List<Doc> find(int pageNo, int pageSize)
+    {
+        Pageable paging = PageRequest.of(pageNo, pageSize);
+        Page<Doc> pages = this.repository.findAll(paging);
+        List<Doc> list = pages.getContent();
+        return list;
     }
 
     public boolean existsById(String id)

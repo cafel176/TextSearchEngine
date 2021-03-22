@@ -5,13 +5,16 @@ import com.ttds.cw3.Adapter.SearchResultAdapter;
 public class ResponseData<T extends Object>
 {
     private String docid;
-    private String docName;
+    private String docname;
     private String desc;
     private T data;
 
-    public ResponseData(String docid, String docName, T data, String desc) {
+    public ResponseData(String docid, String docname, T data, String desc) {
         this.docid = docid;
-        this.docName = docName;
+        if(docname==null||docname.isEmpty())
+            this.docname = docid;
+        else
+            this.docname = docname;
         this.data = data;
         this.desc = desc;
     }
@@ -19,7 +22,11 @@ public class ResponseData<T extends Object>
     public ResponseData(SearchResultAdapter<T> t)
     {
         docid = t.getDocid();
-        docName = t.getDocName();
+        String docname = t.getDocName();
+        if(docname==null||docname.isEmpty())
+            this.docname = docid;
+        else
+            this.docname = docname;
         data = t.getValue();
         desc = t.getDesc();
     }
@@ -32,12 +39,12 @@ public class ResponseData<T extends Object>
         return docid;
     }
 
-    public String getDocName() {
-        return docName;
+    public String getDocname() {
+        return docname;
     }
 
-    public void setDocName(String docName) {
-        this.docName = docName;
+    public void setDocname(String docname) {
+        this.docname = docname;
     }
 
     public T getData() {

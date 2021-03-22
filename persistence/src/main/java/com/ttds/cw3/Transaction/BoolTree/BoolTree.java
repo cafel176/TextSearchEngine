@@ -30,12 +30,19 @@ public final class BoolTree<T extends Object>
 
     public ArrayList<T> getResult(DataType dataType)
     {
-        ArrayList<T> arr;
-        switch (dataType)
+        ArrayList<T> arr = null;
+        try
         {
-            case Boolean: arr = root.getResult().getValue(); break;
-            case Double: arr = root.getResult().getValue(); break;
-            default: arr = null; break;
+            switch (dataType)
+            {
+                case Boolean: arr = root.getResult().getValue(); break;
+                case Double: arr = root.getResult().getValue(); break;
+                default: arr = null; break;
+            }
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
         }
         return arr;
     }

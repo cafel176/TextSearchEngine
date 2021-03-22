@@ -25,8 +25,11 @@ public final class BoolNode extends DataNode<Boolean>
         ArrayList<SearchResult<Boolean>> otherValue = other.getValue();
         for(int i=0;i<value.size();i++)
         {
-            SearchResult re = new SearchResult(value.get(i).getDocid(),value.get(i).getDocName(),value.get(i).getValue() && otherValue.get(i).getValue());
-            re.setDesc(value.get(i).getDesc());
+            SearchResult<Boolean> a = value.get(i);
+            if(a==null)
+                continue;
+            SearchResult re = new SearchResult(a.getDocid(),a.getDocName(),a.getValue() && otherValue.get(i).getValue());
+            re.setDesc(a.getDesc());
             result.add(re);
         }
         return new BoolNode(result);
@@ -39,8 +42,11 @@ public final class BoolNode extends DataNode<Boolean>
         ArrayList<SearchResult<Boolean>> otherValue = other.getValue();
         for(int i=0;i<value.size();i++)
         {
-            SearchResult re = new SearchResult(value.get(i).getDocid(),value.get(i).getDocName(),value.get(i).getValue() || otherValue.get(i).getValue());
-            re.setDesc(value.get(i).getDesc());
+            SearchResult<Boolean> a = value.get(i);
+            if(a==null)
+                continue;
+            SearchResult re = new SearchResult(a.getDocid(),a.getDocName(),a.getValue() || otherValue.get(i).getValue());
+            re.setDesc(a.getDesc());
             result.add(re);
         }
         return new BoolNode(result);
@@ -52,8 +58,11 @@ public final class BoolNode extends DataNode<Boolean>
         ArrayList<SearchResult<Boolean>> result = new ArrayList<>();
         for(int i=0;i<value.size();i++)
         {
-            SearchResult re = new SearchResult(value.get(i).getDocid(),value.get(i).getDocName(),!value.get(i).getValue());
-            re.setDesc(value.get(i).getDesc());
+            SearchResult<Boolean> a = value.get(i);
+            if(a==null)
+                continue;
+            SearchResult re = new SearchResult(a.getDocid(),a.getDocName(),!a.getValue());
+            re.setDesc(a.getDesc());
             result.add(re);
         }
         return new BoolNode(result);
@@ -64,10 +73,13 @@ public final class BoolNode extends DataNode<Boolean>
     {
         for(int i=0;i<value.size();i++)
         {
-            String t = value.get(i).getDesc();
+            SearchResult<Boolean> a = value.get(i);
+            if(a==null)
+                continue;
+            String t = a.getDesc();
             if(t==null||t.isEmpty())
                 t = "Empty";
-            value.get(i).setDesc(t);
+            a.setDesc(t);
         }
         return this;
     }

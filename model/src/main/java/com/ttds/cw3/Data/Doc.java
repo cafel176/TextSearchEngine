@@ -16,13 +16,13 @@ public class Doc implements DocInterface
     private String category = "";
     private String content = "";
 
-    public Doc() { }
+    public Doc(){}
 
     public Doc(String content,String author, String category)
     {
-        this.author = author;
-        this.category = category;
-        this.content = content;
+        setText(content);
+        setCategory(category);
+        setAuthor(author);
     }
 
     public Doc(String text)

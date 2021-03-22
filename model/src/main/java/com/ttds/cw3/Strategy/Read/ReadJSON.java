@@ -11,7 +11,7 @@ import java.util.ArrayList;
 public final class ReadJSON extends ReadStrategy<JSONAdapter>
 {
     @Override
-    public JSONAdapter read(String file, String encoding)
+    public JSONAdapter read(String file, String encoding,int max)
     {
         JSONAdapter object = null;
 

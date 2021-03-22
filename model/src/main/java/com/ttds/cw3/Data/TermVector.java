@@ -3,7 +3,8 @@ package com.ttds.cw3.Data;
 import com.ttds.cw3.Interface.TermVectorInterface;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -12,12 +13,12 @@ public class TermVector implements TermVectorInterface
 {
     @Id
     private String term = "";
-    private HashMap<String,ArrayList<Integer>> postings; // id, pos
+    private ConcurrentHashMap<String,ArrayList<Integer>> postings; // id, pos
 
     public TermVector(String term)
     {
         this.term = term;
-        this.postings = new HashMap<>();
+        this.postings = new ConcurrentHashMap<>();
     }
 
     public void addPos(String id, int pos)
@@ -41,7 +42,7 @@ public class TermVector implements TermVectorInterface
         return postings.size();
     }
 
-    public HashMap<String, ArrayList<Integer>> getPostings()
+    public ConcurrentHashMap<String, ArrayList<Integer>> getPostings()
     {
         return postings;
     }
@@ -50,10 +51,21 @@ public class TermVector implements TermVectorInterface
         this.term = term;
     }
 
-    public void setPostings(HashMap<String, ArrayList<Integer>> postings)
+    public void addPostings(ConcurrentHashMap<String, ArrayList<Integer>> postings)
     {
-        HashMap<String, ArrayList<Integer>> map = new HashMap<>();
-        map.putAll(postings);
-        this.postings = map;
+        ArrayList<ArrayList<Integer>> values = new ArrayList(postings.values());
+        ArrayList<String> keys = new ArrayList(postings.keySet());
+        for(int i=0;i< keys.size();i++)
+        {
+            String key = keys.get(i);
+            if(this.postings.containsKey(key))
+            {
+                this.postings.get(key).addAll(values.get(i));
+            }
+            else
+            {
+                this.postings.put(key,values.get(i));
+            }
+        }
     }
 }

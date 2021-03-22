@@ -3,6 +3,7 @@ package com.ttds.cw3.Adapter;
 import com.ttds.cw3.Interface.DocVectorInterface;
 
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DocVectorAdapter
 {
@@ -30,7 +31,7 @@ public class DocVectorAdapter
         return dv.getDocName();
     }
 
-    public HashMap<String, Integer> getTerms()
+    public ConcurrentHashMap<String, Integer> getTerms()
     {
         return dv.getTerms();
     }

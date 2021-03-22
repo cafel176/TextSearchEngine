@@ -164,6 +164,62 @@ public class GetManager
                 });
     }
 
+    @Bean
+    @Autowired
+    @CrossOrigin
+    @ResponseBody
+    public RouterFunction<ServerResponse> searchAndretrieval(PersistanceManagerAdapter m)
+    {
+        return RouterFunctions.route(RequestPredicates.GET(address+"all"),
+                request->{
+                    MultiValueMap<String,String> params = request.exchange().getRequest().getQueryParams();
+                    String txt = params.getFirst("txt").trim();
+                    int start = Integer.parseInt(params.getFirst("start").trim());
+                    int end = Integer.parseInt(params.getFirst("end").trim());
+                    System.out.printf("查询：%s 起始：%d 结束：%d \n",txt,start,end);
+
+                    AllResponseData res;
+                    if(txt.isEmpty())
+                    {
+                        res = new AllResponseData(ResponseType.illegalInput,"Can not input empty query!");
+                    }
+                    else if(txt.length()>lengthLimit)
+                    {
+                        res = new AllResponseData(ResponseType.illegalInput,"Query text is too long!");
+                    }
+                    else
+                    {
+                        try
+                        {
+                            Pair<OtherParamsAdapter,ArrayList<SearchResultAdapter<Double>>> p = m.search(txt,start,end);
+                            ArrayList<SearchResultAdapter<Double>> arr = p.getValue();
+                            ArrayList<ResponseData> re = new ArrayList<>();
+                            for(int i=0;i<arr.size();i++)
+                            {
+                                re.add(new ResponseData<>(arr.get(i)));
+                            }
+
+                            int num = p.getKey().getNum();
+
+                            res = new AllResponseData();
+                            res.setNum(num);
+                            res.setDatas(re);
+                        }
+                        catch (Exception e)
+                        {
+                            //e.printStackTrace();
+                            res = new AllResponseData(ResponseType.illegalInput,e.getMessage());
+                        }
+                    }
+
+                    Mono<AllResponseData> reMono = Mono.just(res);
+                    ServerResponse.BodyBuilder a = ServerResponse.ok();
+                    a = a.header("Access-Control-Allow-Origin",allowOrigin);
+                    a = a.header("Access-Control-Allow-Credentials","true");
+                    return a.body(reMono,AllResponseData.class);
+                });
+    }
+
     public boolean loadProperties(String name)
     {
         boolean success;

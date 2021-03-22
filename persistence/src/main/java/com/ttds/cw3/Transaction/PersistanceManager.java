@@ -83,10 +83,9 @@ public final class PersistanceManager implements PersistanceManagerInterface
     {
         DataType dataType = DataType.Double;
         buildTree(str,dataType);
-        setRetrievalDatas();
+        setRetrievalDatas("",null);
         ArrayList<SearchResult<Double>> arr = getRetrievalResult(dataType);
-        ArrayList<SearchResult<Double>> results = retrieval.sort(arr);
-
+        ArrayList<SearchResult<Double>> results = retrieval.sort(retrieval.clip(arr));
         ArrayList<SearchResultInterface<Double>> output = new ArrayList<>();
         for(int i=start;i<results.size() && i<=end;i++)
         {
@@ -105,12 +104,52 @@ public final class PersistanceManager implements PersistanceManagerInterface
         buildTree(str, dataType);
         setSearchModuleDatas();
         ArrayList<SearchResult<Boolean>> arr = getSearchModuleResult(dataType);
-        ArrayList<SearchResult<Boolean>> results = search.sort(arr);
+        ArrayList<SearchResult<Boolean>> results = search.sort(search.clip(arr));
 
         ArrayList<SearchResultInterface<Boolean>> output = new ArrayList<>();
         for(int i=start;i<results.size() && i<=end;i++)
         {
             output.add(results.get(i));
+        }
+
+        OtherParams param = new OtherParams();
+        param.setNum(results.size());
+
+        return new Pair(param,output);
+    }
+
+    public Pair<OtherParamsInterface,ArrayList<SearchResultInterface<Double>>> search(String str, int start, int end) throws Exception
+    {
+        String[] st = str.split(" ",2);
+        RetrievalModelType type = symbols.TxtToRetrievalTypeAll(st[0].trim());
+        String query = st[1].trim();
+
+        DataType dataType = DataType.Boolean;
+        buildTree(query, dataType);
+        setSearchModuleDatas();
+        ArrayList<SearchResult<Boolean>> arr = getSearchModuleResult(dataType);
+        ArrayList<SearchResult<Boolean>> results = search.clip(arr);
+        ArrayList<String> filter = new ArrayList<>();
+        for(int i=0;i<results.size();i++)
+        {
+            filter.add(results.get(i).getDocid());
+        }
+
+        dataType = DataType.Double;
+        buildTree(query, dataType);
+        setRetrievalDatas(st[0].trim(),filter);
+        ArrayList<SearchResult<Double>> arr2 = getRetrievalResult(dataType);
+        ArrayList<SearchResult<Double>> results2 = retrieval.clip(arr2);
+        for(int i=0;i<results2.size();i++)
+        {
+            results2.get(i).setDesc(results.get(i).getDesc());
+        }
+        results2 = retrieval.sort(results2);
+
+        ArrayList<SearchResultInterface<Double>> output = new ArrayList<>();
+        for(int i=start;i<results2.size() && i<=end;i++)
+        {
+            output.add(results2.get(i));
         }
 
         OtherParams param = new OtherParams();
@@ -213,7 +252,7 @@ public final class PersistanceManager implements PersistanceManagerInterface
         }
     }
 
-    private void setRetrievalDatas() throws Exception
+    private void setRetrievalDatas(String type_, ArrayList<String> filter) throws Exception
     {
         ArrayList<String> datas = tree.getDatas();
         for(int i=0;i<datas.size();i++)
@@ -221,12 +260,16 @@ public final class PersistanceManager implements PersistanceManagerInterface
             String[] params = getParams(datas.get(i));
 
             String[] st = params[0].split("_",2);
-            RetrievalModelType type = symbols.TxtToRetrievalTypeAll(st[0]);
+            RetrievalModelType type;
+            if(type_.isEmpty())
+                type = symbols.TxtToRetrievalTypeAll(st[0]);
+            else
+                type = symbols.TxtToRetrievalTypeAll(type_);
             String txt;
             String param;
             if(params.length==1)
             {
-                if(type!=RetrievalModelType.base)
+                if(type_.isEmpty() && type!=RetrievalModelType.base)
                     throw new Exception(st[0] + "运算参数异常");
 
                 txt = params[0];
@@ -237,9 +280,8 @@ public final class PersistanceManager implements PersistanceManagerInterface
                 param = params[2];
             }
 
-            ArrayList<Pair<String, Double>> arr = retrieval.spaenDatas(type,txt,param);
-
-            tree.setData(i, arr);
+            ArrayList<SearchResult<Double>> re = retrieval.spaenDatas(type,txt,param,filter);
+            tree.setData(i, re);
         }
     }
 }

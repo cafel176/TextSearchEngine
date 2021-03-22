@@ -7,6 +7,7 @@ import com.ttds.cw3.Adapter.PreProcessingAdapter;
 import com.ttds.cw3.Data.SearchResult;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -19,10 +20,10 @@ public abstract class RetrievalModel
         this.thread = thread;
     }
 
-    public SearchResult<Double>[] searchAllDoc(String str, String param, PreProcessingAdapter preProcessing, ModelManagerAdapter m) throws Exception
+    public SearchResult<Double>[] searchAllDoc(String str, String param, PreProcessingAdapter preProcessing, ModelManagerAdapter m, ArrayList<String> filter) throws Exception
     {
         preProcessing.doProcessing(str);
-        HashMap<String, ArrayList<Integer>> wordsMap = preProcessing.getTerms();
+        ConcurrentHashMap<String, ArrayList<Integer>> wordsMap = preProcessing.getTerms();
 
         // 搜索输入
         ArrayList<String> words = new ArrayList(wordsMap.keySet());
@@ -31,53 +32,63 @@ public abstract class RetrievalModel
             words = new ArrayList(Arrays.asList(str.split(" ")));
 
         // 结果输出
-        SearchResult<Double>[] results = new SearchResult[m.getDocSize()];
+        List dvs = m.getDvs();
+        int size = dvs.size();
+        SearchResult<Double>[] results = new SearchResult[size];
 
         // =============== 准备工作 ===============
-        List docs = m.getDvs();
-        List docinfos = m.getDocs();
-        int num = docs.size();
 
-        String other = prepare(num,docs,docinfos,words);
+        String other = prepare(size,dvs,words,m);
 
         // =============== 遍历文档集合 ===============
+        final int max = 100000;
+        int all = (int)Math.ceil(1.0*size/max);
         long startTime = System.currentTimeMillis();
-
-        if(thread<=0)
-            inThread(num,0, num, words, param,docs,docinfos, results, m,other);
-        else
+        for(int k=0;k<all;k++)
         {
-            ExecutorService pool = Executors.newCachedThreadPool();
-            int per = num/thread;
-            for (int s = 0, e = per; e <= num;)
-            {
-                ArrayList<String> finalWords = words;
-                int finalS = s, finalE = e;
-                pool.execute(new Runnable() {
-                    @Override
-                    public void run()
-                    {
-                        final int start = finalS,end = finalE;
-                        inThread(num,start, end, finalWords, param,docs,docinfos, results, m,other);
-                    }
-                });
+            int num = (k + 1) * max;
+            if (num > size)
+                num = size;
 
-                if(e==num)
-                    break;
-
-                s = e;
-                e += per;
-                if(e>num)
-                    e = num;
-            }
-            pool.shutdown();
-            try
+            if(thread<=0)
+                inThread(size,k*max, num, words, param,dvs, results, m,filter,other);
+            else
             {
-                pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                ExecutorService pool = Executors.newCachedThreadPool();
+                int per = num/thread;
+                if(per < 1)
+                    per = 1;
+                for (int s = 0, e = per; e <= num;)
+                {
+                    ArrayList<String> finalWords = words;
+                    int finalS = s, finalE = e;
+                    pool.execute(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            final int start = finalS,end = finalE;
+                            inThread(size,start, end, finalWords, param,dvs, results, m,filter,other);
+                        }
+                    });
+
+                    if(e==num)
+                        break;
+
+                    s = e;
+                    e += per;
+                    if(e>num)
+                        e = num;
+                }
+                pool.shutdown();
+                try
+                {
+                    pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
+
 
         long endTime = System.currentTimeMillis();
         System.out.println("Retrieval搜索时间："+(endTime-startTime));
@@ -85,29 +96,36 @@ public abstract class RetrievalModel
         return results;
     }
 
-    protected void inThread(int num, int start, int end, ArrayList<String> words, String param,
-                            List docs,List docinfos, SearchResult<Double>[] results, ModelManagerAdapter m,String other)
+    protected void inThread(int size, int start, int end, ArrayList<String> words, String param, List dvs,
+                            SearchResult<Double>[] results, ModelManagerAdapter m, ArrayList<String> filter,String other)
     {
         for(int j=start;j<end;j++)
         {
-            DocAdapter docinfo = new DocAdapter(docinfos.get(j));
-            DocVectorAdapter doc = m.getDvByDocid(docinfo.getId());
-            if(doc==null)
+            DocVectorAdapter dv = new DocVectorAdapter(dvs.get(j));
+            if(dv==null)
                 continue;
+
+            // =============== 筛选步骤 ===============
+            if(filter!=null && !filter.contains(dv.getDocid()))
+            {
+                results[j] = new SearchResult(dv.getDocid(),dv.getDocName(), 0.0);
+                continue;
+            }
 
             try {
                 setParams(param);
             } catch (Exception exception) {
                 exception.printStackTrace();
             }
-            results[j] = searchDoc(words,doc,docinfo,m,other);
+
+            results[j] = searchDoc(words,dv,m.getDoc(dv.getDocid()),m,other);
         }
     }
 
     public SearchResult<Double> searchDoc(String str,String param, PreProcessingAdapter preProcessing, DocVectorAdapter doc,DocAdapter docinfo, ModelManagerAdapter m, String other) throws Exception
     {
         preProcessing.doProcessing(str);
-        HashMap<String, ArrayList<Integer>> wordsMap = preProcessing.getTerms();
+        ConcurrentHashMap<String, ArrayList<Integer>> wordsMap = preProcessing.getTerms();
 
         // 搜索输入
         ArrayList<String> words = new ArrayList(wordsMap.keySet());
@@ -119,7 +137,7 @@ public abstract class RetrievalModel
         return searchDoc(words,doc,docinfo,m,other);
     }
 
-    protected abstract String prepare(int num, List docs,List docinfos, ArrayList<String> words);
+    protected abstract String prepare(int num, List docs, ArrayList<String> words,ModelManagerAdapter m);
 
     protected abstract void setParams(String param) throws Exception;
 

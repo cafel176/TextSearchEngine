@@ -20,7 +20,12 @@ public final class AnalysisFromStrings extends AnalysisStrategy<List<String>>
         {
             String temp = data.get(i).trim();
             String[] st = temp.split(token);
-            list.add(new Doc(st[0],st[1],st[2]));
+            String content = st[0],author = null,category = null;
+            if(st.length>=2)
+                author = st[1];
+            if(st.length>=3)
+                category = st[2];
+            list.add(new Doc(content,author,category));
         }
         return list;
     }

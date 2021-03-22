@@ -1,24 +1,24 @@
 package com.ttds.cw3.Data;
 
 import com.ttds.cw3.Interface.DocVectorInterface;
-
-import java.util.HashMap;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 @Document(collection = "dvector")
 public class DocVector implements DocVectorInterface
 {
     @Id
     private String docid = "";
-    private String docName = "";
-    private HashMap<String,Integer> terms;
+    private String docname = "";
+    private ConcurrentHashMap<String,Integer> terms;
 
-    public DocVector(String docid, String docName)
+    public DocVector(String docid, String docname)
     {
         this.docid = docid;
-        this.docName = docName;
-        this.terms = new HashMap<>();
+        this.docname = docname;
+        this.terms = new ConcurrentHashMap<>();
     }
 
     public void addTerm(String term)
@@ -43,20 +43,20 @@ public class DocVector implements DocVectorInterface
     }
 
     public String getDocName() {
-        return docName;
+        return docname;
     }
 
-    public void setDocName(String docName) {
-        this.docName = docName;
+    public void setDocName(String docname) {
+        this.docname = docname;
     }
 
-    public HashMap<String, Integer> getTerms() {
+    public ConcurrentHashMap<String, Integer> getTerms() {
         return terms;
     }
 
-    public void setTerms(HashMap<String, Integer> terms)
+    public void setTerms(ConcurrentHashMap<String, Integer> terms)
     {
-        HashMap<String, Integer> map = new HashMap<>();
+        ConcurrentHashMap<String, Integer> map = new ConcurrentHashMap<>();
         map.putAll(terms);
         this.terms = map;
     }

@@ -1,8 +1,12 @@
 package com.ttds.cw3.Interface;
 
+import com.ttds.cw3.Data.Doc;
 import com.ttds.cw3.Data.DocVector;
 import com.ttds.cw3.Data.TermVector;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 
 public interface ModelManagerInterface
@@ -17,10 +21,17 @@ public interface ModelManagerInterface
     DocInterface getDoc(String id);
     DocVectorInterface getDvByDocid(String docid);
     TermVectorInterface getTermByTerm(String term);
+/*
+    ArrayList<DocInterface> getDocsById(int pageNo, int pageSize);
+    ArrayList<DocInterface> getDocsByCategory(int pageNo, int pageSize);
+    ArrayList<DocInterface> getDocsByAuthor(int pageNo, int pageSize);
 
+ */
+
+    ArrayList<TermVectorInterface> getTerms();
+    ArrayList<DocVectorInterface> getDvs();
+
+    long getDvsSize();
     long getDocSize();
     long getTermsSize();
-    List<TermVectorInterface> getTerms();
-    List<DocVectorInterface> getDvs();
-    List<DocInterface> getDocs();
 }

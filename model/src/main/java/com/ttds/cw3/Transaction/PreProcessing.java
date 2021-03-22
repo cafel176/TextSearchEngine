@@ -1,15 +1,10 @@
 package com.ttds.cw3.Transaction;
 
-import com.ttds.cw3.Factory.AnalysisFactory;
-import com.ttds.cw3.Factory.ReaderFactory;
 import com.ttds.cw3.Interface.PreProcessingInterface;
-import com.ttds.cw3.Strategy.StrategyType;
-import com.ttds.cw3.Tools.DocAnalysis;
-import com.ttds.cw3.Tools.DocReader;
 import com.ttds.cw3.Tools.Stemmer;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,48 +12,25 @@ import java.util.ArrayList;
 
 public final class PreProcessing implements PreProcessingInterface
 {
-    private List<String> stopWords;
     private Stemmer stemmer;
-
-    private DocReader reader;
-    private DocAnalysis converter;
-    private HashMap<String,ArrayList<Integer>> terms; // term, pos
+    private ConcurrentHashMap<String,ArrayList<Integer>> terms; // term, pos
+    private List<String> stopWords;
 
     private boolean BremoveStopWords = true;
     private boolean Bstem = true;
     private String pattern = "[\\w]+";
 
-    public PreProcessing(String filePath)
+    public PreProcessing(List<String> stopWords,boolean bremoveStopWords, boolean bstem,String pattern)
     {
         stemmer = new Stemmer();
-        reader = new DocReader(filePath);
-        converter = new DocAnalysis();
-        terms = new HashMap<>();
-    }
-
-    public void setFilePath(String file)
-    {
-        reader.setFilePath(file);
-    }
-
-    public void setStopWordFile(String fileName, StrategyType type)
-    {
-        stopWords = converter.txtsfrom(AnalysisFactory.get(type),reader.get(fileName, ReaderFactory.get(type)));
-    }
-
-    public void setBremoveStopWords(boolean bremoveStopWords) {
+        terms = new ConcurrentHashMap<>();
         BremoveStopWords = bremoveStopWords;
-    }
-
-    public void setBstem(boolean bstem) {
         Bstem = bstem;
-    }
-
-    public void setPattern(String pattern) {
+        this.stopWords = stopWords;
         this.pattern = pattern;
     }
 
-    public HashMap<String, ArrayList<Integer>> getTerms() {
+    public ConcurrentHashMap<String, ArrayList<Integer>> getTerms() {
         return terms;
     }
 

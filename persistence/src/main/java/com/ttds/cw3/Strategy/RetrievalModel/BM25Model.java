@@ -54,14 +54,16 @@ public final class BM25Model extends RetrievalModel
     }
 
     @Override
-    protected String prepare(int num, List docs,List docinfos, ArrayList<String> words)
+    protected String prepare(int num, List docs, ArrayList<String> words,ModelManagerAdapter m)
     {
         if(thread<=0)
-            process(0, num, docs,docinfos, words);
+            process(0, num, docs, words,m);
         else
         {
             ExecutorService pool = Executors.newCachedThreadPool();
             int per = num/thread;
+            if(per < 1)
+                per = 1;
             for (int s = 0, e = per; e <= num;)
             {
                 ArrayList<String> finalWords = words;
@@ -71,7 +73,7 @@ public final class BM25Model extends RetrievalModel
                     public void run()
                     {
                         final int start = finalS,end = finalE;
-                        process(start, end, docs,docinfos, words);
+                        process(start, end, docs, words,m);
                     }
                 });
 
@@ -95,17 +97,17 @@ public final class BM25Model extends RetrievalModel
         return null;
     }
 
-    private void process(int start,int end,List docs,List docinfos, ArrayList<String> words)
+    private void process(int start,int end,List dvs, ArrayList<String> words,ModelManagerAdapter m)
     {
         double alldl = 0.0;
         double N = 0.0;
         for (int j=start;j<end;j++)
         {
-            DocVectorAdapter doc = new DocVectorAdapter(docs.get(j));
-            DocAdapter docinfo = new DocAdapter(docinfos.get(j));
+            DocVectorAdapter dv = new DocVectorAdapter(dvs.get(j));
+            DocAdapter docinfo = m.getDoc(dv.getDocid());
             for(int i=0;i<words.size();i++)
             {
-                Integer tf = doc.getTerms().get(words.get(i));
+                Integer tf = dv.getTerms().get(words.get(i));
                 if(tf==null)
                     continue;
                 alldl += docinfo.getText().length();

@@ -35,6 +35,14 @@ public class DvectorDB
         return list;
     }
 
+    public List<DocVector> find(int pageNo, int pageSize)
+    {
+        Pageable paging = PageRequest.of(pageNo, pageSize);
+        Page<DocVector> pages = this.repository.findAll(paging);
+        List<DocVector> list = pages.getContent();
+        return list;
+    }
+
     public boolean exists(String docid)
     {
         return this.repository.existsById(docid);

@@ -39,7 +39,7 @@ public final class BaseRetrieval extends RetrievalModel
     }
 
     @Override
-    protected String prepare(int num, List docs, List docinfos, ArrayList<String> words)
+    protected String prepare(int num, List docinfos, ArrayList<String> words,ModelManagerAdapter m)
     {
         return null;
     }

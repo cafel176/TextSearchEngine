@@ -7,10 +7,11 @@ import java.util.ArrayList;
 public final class DocReader
 {
     private String filePath;
+    private int max;
 
-    public DocReader(String filePath)
+    public DocReader(String filePath,int max)
     {
-        this.filePath = filePath;
+        this.filePath = filePath;this.max = max;
     }
 
     public void setFilePath(String filePath) {
@@ -29,6 +30,6 @@ public final class DocReader
             System.out.println("Reader加载出错！");
             return null;
         }
-        return reader.read(getFullPath(fileName));
+        return reader.read(getFullPath(fileName),max);
     }
 }
