@@ -3,6 +3,7 @@ package com.ttds.cw3.Strategy.RetrievalModel;
 import com.ttds.cw3.Adapter.DocAdapter;
 import com.ttds.cw3.Adapter.DocVectorAdapter;
 import com.ttds.cw3.Adapter.ModelManagerAdapter;
+import com.ttds.cw3.Adapter.TermVectorAdapter;
 import com.ttds.cw3.Data.SearchResult;
 
 import java.util.ArrayList;
@@ -15,17 +16,17 @@ public final class TfidfModel extends RetrievalModel
     }
 
     @Override
-    protected SearchResult<Double> searchDoc(ArrayList<String> words, DocVectorAdapter doc, DocAdapter docinfo, ModelManagerAdapter m, String other)
+    protected SearchResult<Double> searchDoc(ArrayList<TermVectorAdapter> terms, DocVectorAdapter doc, DocAdapter docinfo, String other)
     {
-        double N = m.getDocSize();
+        double N = Integer.parseInt(other);
         double score = 0.0;
 
-        for(int i=0;i<words.size();i++)
+        for(int i=0;i<terms.size();i++)
         {
-            Integer tf = doc.getTerms().get(words.get(i));
+            Integer tf = doc.getTerms().get(terms.get(i).getTerm());
             if(tf==null)
                 continue;
-            double df = m.getTermByTerm(words.get(i)).getDf();
+            double df = terms.get(i).getDf();
             double re = (1+log(tf,10)) * log(N/df,10);
             score += re;
         }
@@ -43,7 +44,7 @@ public final class TfidfModel extends RetrievalModel
     }
 
     @Override
-    protected String prepare(int num, List docinfos, ArrayList<String> words,ModelManagerAdapter m)
+    protected String prepare(int size, int max,int all,  ArrayList<String> words,ModelManagerAdapter m)
     {
         return null;
     }

@@ -3,7 +3,9 @@ package com.ttds.cw3.Strategy.SearchModule;
 import com.ttds.cw3.Adapter.DocAdapter;
 import com.ttds.cw3.Adapter.DocVectorAdapter;
 import com.ttds.cw3.Adapter.ModelManagerAdapter;
+import com.ttds.cw3.Adapter.TermVectorAdapter;
 import com.ttds.cw3.Data.SearchResult;
+import com.ttds.cw3.Interface.TermVectorInterface;
 
 import java.util.ArrayList;
 
@@ -14,11 +16,13 @@ public final class BaseSearch extends SearchModule
     }
 
     @Override
-    protected SearchResult<Boolean> searchDoc(ArrayList<String> words, DocVectorAdapter doc, DocAdapter docinfo, ModelManagerAdapter m)
+    protected SearchResult<Boolean> searchDoc(ArrayList<TermVectorAdapter> tvs, DocAdapter doc)
     {
-        SearchResult<Boolean> re = new SearchResult(doc.getDocid(),doc.getDocName(),true);
-        String text = docinfo.getText();
-        ArrayList<Integer> poses = m.getTermByTerm(words.get(0)).getPostings().get(doc.getDocid());
+        SearchResult<Boolean> re = new SearchResult(doc.getId(),doc.getName(),true);
+        String text = doc.getText();
+
+        ArrayList<Integer> poses = tvs.get(0).getPostings().get(doc.getId());
+
         int pos = 0;
         if(poses!=null)
             pos = poses.get(0);

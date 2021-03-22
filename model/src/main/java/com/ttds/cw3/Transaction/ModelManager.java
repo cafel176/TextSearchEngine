@@ -55,6 +55,37 @@ public final class ModelManager implements ModelManagerInterface
         System.out.printf("Model Manager构造完成。\n");
     }
 
+    public void test()
+    {
+        int max = 5000;
+        int size = (int)docsRepository.getTermsDBSize();
+        int all = (int)Math.ceil(1.0*size/max);
+        ArrayList<String> list = new ArrayList<>();
+
+        for(int w=0;w<5;w++)
+        {
+            for(int k=0;k<all;k++)
+            {
+                List<TermVector> data = docsRepository.termcDBfind(k,max);
+                for(int i=0;i<data.size();i++)
+                {
+                    String key = data.get(i).getTerm();
+                    long startTime = System.currentTimeMillis();
+                    TermVectorInterface t = getTermByTerm("love");
+                    long endTime = System.currentTimeMillis();
+                    System.out.println(endTime-startTime);
+                    if(endTime-startTime>20 && !list.contains(t.getTerm()))
+                    {
+
+                    }
+                    //System.out.print("\b\b\b\b\b\b\b"+String.format("%.2f",100.0*(k*max+i)/size)+"%");
+                }
+            }
+            System.out.println();
+            System.out.println(list.size());
+        }
+    }
+
     public boolean setFilePath()
     {
         if(props==null)
@@ -124,8 +155,127 @@ public final class ModelManager implements ModelManagerInterface
                 }
             }
         }
+    }
 
-        docsRepository.initFromDB();
+    public void init()
+    {
+        initDB(thread,0);
+        initDB(thread,2);
+        initDB(thread,1);
+    }
+
+    private void initDB(int thread,int i)
+    {
+        final int max = 5000;
+        int size = 0;
+        if(i==2)
+        {
+            System.out.println("terms数据缓存:");
+            size = (int)docsRepository.getTermsDBSize();
+        }
+        else if(i==1)
+        {
+            System.out.println("dvs数据缓存:");
+            size = (int)docsRepository.getDvsDBSize();
+        }
+        else
+        {
+            System.out.println("docs数据缓存:");
+            size = (int)docsRepository.getDocDBSize();
+        }
+
+        int all = (int)Math.ceil(1.0*size/max);
+        long startTime = System.currentTimeMillis();
+        for(int k=0;k<all;k++)
+        {
+            List data;
+            if(i==2)
+            {
+                data = docsRepository.termcDBfind(k,max);
+            }
+            else if(i==1)
+            {
+                data = docsRepository.dvsDBfind(k,max);
+            }
+            else
+            {
+                data = docsRepository.docDBfind(k,max);
+            }
+            int num = max;
+            if (num > data.size())
+                num = data.size();
+
+            if (data == null)
+                continue;
+
+            if(thread<=0)
+                inThread(size,0, num,i,data);
+            else
+            {
+                ExecutorService pool = Executors.newCachedThreadPool();
+                int per = num/thread;
+                if(per < 1)
+                    per = 1;
+                for (int s = 0, e = per; e <= num;)
+                {
+                    int finalS = s, finalE = e;
+                    int finalNum = num;
+                    int finalI = i;
+                    pool.execute(new Runnable() {
+                        @Override
+                        public void run()
+                        {
+                            final int start = finalS,end = finalE;
+                            final int type = finalI,size = finalNum;
+                            inThread(size,start, end,type,data);
+                        }
+                    });
+                    if(e==num)
+                        break;
+
+                    s = e;
+                    e += per;
+                    if(e>num)
+                        e = num;
+                }
+                pool.shutdown();
+                try
+                {
+                    pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        long endTime = System.currentTimeMillis();
+        System.out.println();
+        System.out.println("用时："+(endTime-startTime));
+    }
+
+    private void inThread(int size, int start,int end,int type,List list)
+    {
+        for(int i=start;i<end;i++)
+        {
+            if(type==2)
+            {
+                TermVector tv = (TermVector)list.get(i);
+                TermVector re = docsRepository.getTermByTerm(tv.getTerm());
+                System.out.print("\b\b\b\b\b\b\b"+String.format("%.2f",100.0*i/size)+"%");
+            }
+            else if(type==1)
+            {
+                DocVector dv = (DocVector)list.get(i);
+                DocVector re = docsRepository.getDvByDocid(dv.getDocid());
+                System.out.print("\b\b\b\b\b\b\b"+String.format("%.2f",100.0*i/size)+"%");
+            }
+            else
+            {
+                Doc d = (Doc) list.get(i);
+                Doc re = docsRepository.getDoc(d.getId());
+                System.out.print("\b\b\b\b\b\b\b"+String.format("%.2f",100.0*i/size)+"%");
+            }
+        }
     }
 
     public boolean loadProperties(String name)
@@ -139,6 +289,9 @@ public final class ModelManager implements ModelManagerInterface
             filePath = props.getProperty("filePath").trim();
             thread = Integer.parseInt(props.getProperty("thread").trim());
             max = Integer.parseInt(props.getProperty("max").trim());
+            int smax = Integer.parseInt(props.getProperty("smax").trim());
+            int rmax = Integer.parseInt(props.getProperty("rmax").trim());
+            docsRepository.setMax(Math.max(smax,rmax));
 
             st = props.getProperty("stopWordFile").trim().split("#");
 
@@ -283,47 +436,29 @@ public final class ModelManager implements ModelManagerInterface
         return docsRepository.getDoc(id);
     }
 
+    public List<DocVectorInterface> dvsDBfind(int pageNo, int pageSize,int all)
+    {
+        List list = docsRepository.dvsDBfindCache(pageNo,pageSize,all);
+        return (List<DocVectorInterface>)list;
+    }
+
+    public ConcurrentHashMap<String,DocInterface> docDBfind(int pageNo, int pageSize,int all)
+    {
+        ConcurrentHashMap map = docsRepository.docDBfindCache(pageNo,pageSize,all);
+        return (ConcurrentHashMap<String,DocInterface>)map;
+    }
+
     public DocVectorInterface getDvByDocid(String docid){return docsRepository.getDvByDocid(docid);}
 
-    public TermVectorInterface getTermByTerm(String term){return docsRepository.getTermByTerm(term);}
-/*
-    public ArrayList<DocInterface> getDocsById(int pageNo, int pageSize)
+    public TermVectorInterface getTermByTerm(String term)
     {
-        ArrayList y = docsRepository.getDocsById(pageNo,pageSize);
-        return (ArrayList<DocInterface>)y;
+        return docsRepository.getTermByTerm(term);
     }
 
-    public ArrayList<DocInterface> getDocsByCategory(int pageNo, int pageSize)
+    public long getDocNum()
     {
-        ArrayList y = docsRepository.getDocsByCategory(pageNo,pageSize);
-        return (ArrayList<DocInterface>)y;
+        return docsRepository.getDocNum();
     }
-
-    public ArrayList<DocInterface> getDocsByAuthor(int pageNo, int pageSize)
-    {
-        ArrayList y = docsRepository.getDocsByAuthor(pageNo,pageSize);
-        return (ArrayList<DocInterface>)y;
-    }
-*/
-    public ArrayList<TermVectorInterface> getTerms()
-    {
-        ArrayList y = docsRepository.getTerms();
-        return (ArrayList<TermVectorInterface>)y;
-    }
-
-    public ArrayList<DocVectorInterface> getDvs()
-    {
-        ArrayList y = docsRepository.getDvs();
-        return (ArrayList<DocVectorInterface>)y;
-    }
-
-    public long getDvsSize(){
-        return docsRepository.getDvsSize();
-    }
-
-    public long getDocSize(){return docsRepository.getDocSize();}
-
-    public long getTermsSize(){return docsRepository.getTermsSize();}
 
     public static <T> ArrayList<T> deepCopy(ArrayList<T> srcList) {
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();

@@ -63,4 +63,14 @@ public class PersistanceManagerAdapter
         }
         return new Pair<>(param,re);
     }
+
+    public void init()
+    {
+        manager.init();
+    }
+
+    public void test()
+    {
+        manager.test();
+    }
 }

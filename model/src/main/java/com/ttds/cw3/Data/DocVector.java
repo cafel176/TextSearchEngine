@@ -4,10 +4,11 @@ import com.ttds.cw3.Interface.DocVectorInterface;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.io.Serializable;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Document(collection = "dvector")
-public class DocVector implements DocVectorInterface
+public class DocVector implements DocVectorInterface, Serializable
 {
     @Id
     private String docid = "";

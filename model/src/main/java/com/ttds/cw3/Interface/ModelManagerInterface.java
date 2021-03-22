@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 public interface ModelManagerInterface
 {
@@ -21,17 +22,10 @@ public interface ModelManagerInterface
     DocInterface getDoc(String id);
     DocVectorInterface getDvByDocid(String docid);
     TermVectorInterface getTermByTerm(String term);
-/*
-    ArrayList<DocInterface> getDocsById(int pageNo, int pageSize);
-    ArrayList<DocInterface> getDocsByCategory(int pageNo, int pageSize);
-    ArrayList<DocInterface> getDocsByAuthor(int pageNo, int pageSize);
+    List<DocVectorInterface> dvsDBfind(int pageNo, int pageSize,int all);
+    ConcurrentHashMap<String,DocInterface> docDBfind(int pageNo, int pageSize, int all);
+    long getDocNum();
 
- */
-
-    ArrayList<TermVectorInterface> getTerms();
-    ArrayList<DocVectorInterface> getDvs();
-
-    long getDvsSize();
-    long getDocSize();
-    long getTermsSize();
+    void init();
+    void test();
 }

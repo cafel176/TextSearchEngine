@@ -41,10 +41,10 @@ public final class SearchDriver
         this.preProcessing = preProcessing;
     }
 
-    public ArrayList<SearchResult<Boolean>> spaenDatas(SearchModuleType type, String txt,String param, ModelManagerAdapter m) throws Exception
+    public ArrayList<SearchResult<Boolean>> spaenDatas(int max,SearchModuleType type, String txt,String param, ModelManagerAdapter m) throws Exception
     {
         SearchModule module = SearchModuleFactory.get(type,limit,thread,pattern);
-        SearchResult<Boolean>[] results =  search(txt,param,module,m);
+        SearchResult<Boolean>[] results =  search(max,txt,param,module,m);
         ArrayList<SearchResult<Boolean>> arr = new ArrayList(Arrays.asList((results)));
         return arr;
     }
@@ -84,7 +84,7 @@ public final class SearchDriver
         return results;
     }
 
-    private SearchResult<Boolean>[] search(String str, String param, SearchModule module, ModelManagerAdapter m) throws Exception
+    private SearchResult<Boolean>[] search(int max,String str, String param, SearchModule module, ModelManagerAdapter m) throws Exception
     {
         if(module==null)
         {
@@ -92,17 +92,6 @@ public final class SearchDriver
             return null;
         }
 
-        return module.searchAllDoc(str,param,preProcessing,m);
-    }
-
-    private SearchResult<Boolean> search(String str,String param, SearchModule module, DocVectorAdapter doc, DocAdapter docinfo) throws Exception
-    {
-        if(module==null)
-        {
-            System.out.println("SearchModule加载出错！");
-            return null;
-        }
-
-        return module.searchDoc(str,param,preProcessing,doc,docinfo,m);
+        return module.searchAllDoc(max,str,param,preProcessing,m);
     }
 }

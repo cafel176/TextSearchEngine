@@ -11,4 +11,7 @@ public interface PersistanceManagerInterface
     Pair<OtherParamsInterface,ArrayList<SearchResultInterface<Double>>> search(String str, int start, int end) throws Exception;
     Pair<OtherParamsInterface,ArrayList<SearchResultInterface<Double>>> searchByRetrievalModel(String str, int start, int end) throws Exception;
     Pair<OtherParamsInterface,ArrayList<SearchResultInterface<Boolean>>> searchBySearchModule(String str, int start, int end) throws Exception;
+
+    void init();
+    void test();
 }

@@ -5,8 +5,10 @@ import com.ttds.cw3.Interface.DocInterface;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.io.Serializable;
+
 @Document(collection = "doc")
-public class Doc implements DocInterface
+public class Doc implements DocInterface, Serializable
 {
     @Id
     private String id = "";

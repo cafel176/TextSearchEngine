@@ -40,10 +40,29 @@ public final class PostManager
     {
         return RouterFunctions.route(RequestPredicates.POST(address + "test"),
                 request -> {
-                    MultiValueMap<String,String> params = request.exchange().getRequest().getQueryParams();
-                    String txt = params.getFirst("txt").trim();
-                    String txt2 = params.getFirst("txt2").trim();
-                    ResponseData<String> re = new ResponseData("docid",txt,txt2,"This is a test");
+                    m.test();
+
+                    ResponseData<String> re = new ResponseData("","","","success");
+                    Mono<ResponseData<String>> reMono = Mono.just(re);
+
+                    ServerResponse.BodyBuilder a = ServerResponse.ok();
+                    a = a.header("Access-Control-Allow-Origin",allowOrigin);
+                    a = a.header("Access-Control-Allow-Credentials","true");
+                    return a.body(reMono,ResponseData.class);
+                });
+    }
+
+    @Bean
+    @CrossOrigin
+    @Autowired
+    @ResponseBody
+    public RouterFunction<ServerResponse> init(PersistanceManagerAdapter m)
+    {
+        return RouterFunctions.route(RequestPredicates.POST(address + "init"),
+                request -> {
+                    m.init();
+
+                    ResponseData<String> re = new ResponseData("","","","success");
                     Mono<ResponseData<String>> reMono = Mono.just(re);
 
                     ServerResponse.BodyBuilder a = ServerResponse.ok();

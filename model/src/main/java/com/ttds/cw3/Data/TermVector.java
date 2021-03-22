@@ -2,6 +2,7 @@ package com.ttds.cw3.Data;
 
 import com.ttds.cw3.Interface.TermVectorInterface;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -9,7 +10,7 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "tvector")
-public class TermVector implements TermVectorInterface
+public class TermVector implements TermVectorInterface, Serializable
 {
     @Id
     private String term = "";

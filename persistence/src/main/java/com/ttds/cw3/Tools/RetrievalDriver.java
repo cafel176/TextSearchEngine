@@ -32,15 +32,15 @@ public final class RetrievalDriver
         this.preProcessing = preProcessing;
     }
 
-    public ArrayList<SearchResult<Double>> spaenDatas(RetrievalModelType type, String txt, String param) throws Exception
+    public ArrayList<SearchResult<Double>> spaenDatas(int max,RetrievalModelType type, String txt, String param) throws Exception
     {
-        return spaenDatas(type, txt, param,null);
+        return spaenDatas(max,type, txt, param,null);
     }
 
-    public ArrayList<SearchResult<Double>> spaenDatas(RetrievalModelType type, String txt, String param, ArrayList<String> filter) throws Exception
+    public ArrayList<SearchResult<Double>> spaenDatas(int max,RetrievalModelType type, String txt, String param, ArrayList<String> filter) throws Exception
     {
         RetrievalModel module = RetrievalModelFactory.get(thread,type);
-        SearchResult<Double>[] results =  search(txt,param,module,filter);
+        SearchResult<Double>[] results =  search(max,txt,param,module,filter);
         return new ArrayList(Arrays.asList((results)));
     }
 
@@ -84,7 +84,7 @@ public final class RetrievalDriver
         return results;
     }
 
-    private SearchResult<Double>[] search(String str,String param, RetrievalModel module, ArrayList<String> filter) throws Exception
+    private SearchResult<Double>[] search(int max,String str,String param, RetrievalModel module, ArrayList<String> filter) throws Exception
     {
         if(module==null)
         {
@@ -92,17 +92,6 @@ public final class RetrievalDriver
             return null;
         }
 
-        return module.searchAllDoc(str,param,preProcessing,m,filter);
-    }
-
-    private SearchResult<Double> search(String str, String param, RetrievalModel module, DocVectorAdapter doc, DocAdapter docinfo,String other) throws Exception
-    {
-        if(module==null)
-        {
-            System.out.println("RetrievalModel加载出错！");
-            return null;
-        }
-
-        return module.searchDoc(str,param,preProcessing,doc,docinfo,m,other);
+        return module.searchAllDoc(max,str,param,preProcessing,m,filter);
     }
 }
