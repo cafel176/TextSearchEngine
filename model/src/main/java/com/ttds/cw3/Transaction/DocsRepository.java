@@ -25,6 +25,8 @@ public final class DocsRepository
     private TvectorDB termsDB;
 
     private ConcurrentHashMap<String, Doc> docsId;
+    private ConcurrentHashMap<String, ArrayList<Doc>> docsCategory;
+    private ConcurrentHashMap<String, ArrayList<Doc>> docsAuthor;
     private ConcurrentHashMap<String, DocVector> dvs;
     private ConcurrentHashMap<String, TermVector> terms;
 
@@ -36,6 +38,8 @@ public final class DocsRepository
         this.termsDB = tvDB;
 
         docsId = new ConcurrentHashMap<>();
+        docsCategory = new ConcurrentHashMap<>();
+        docsAuthor = new ConcurrentHashMap<>();
         dvs = new ConcurrentHashMap<>();
         terms = new ConcurrentHashMap<>();
     }
@@ -248,6 +252,22 @@ public final class DocsRepository
             {
                 d = (Doc)list.get(i);
                 docsId.put(d.getId(),d);
+                if(docsCategory.containsKey(d.getCategory()))
+                    docsCategory.get(d.getCategory()).add(d);
+                else
+                {
+                    ArrayList<Doc> docs = new ArrayList<>();
+                    docs.add(d);
+                    docsCategory.put(d.getCategory(),docs);
+                }
+                if(docsAuthor.containsKey(d.getAuthor()))
+                    docsAuthor.get(d.getAuthor()).add(d);
+                else
+                {
+                    ArrayList<Doc> docs = new ArrayList<>();
+                    docs.add(d);
+                    docsAuthor.put(d.getAuthor(),docs);
+                }
                 System.out.print("\b\b\b\b\b\b\b"+String.format("%.2f",100.0*(k*max+i)/size)+"%");
             }
         }
@@ -291,6 +311,16 @@ public final class DocsRepository
         return docsId.get(id);
     }
 
+    public ArrayList<Doc> getDocsByCategory(String category)
+    {
+        return docsCategory.get(category);
+    }
+
+    public ArrayList<Doc> getDocsByAuthor(String author)
+    {
+        return docsAuthor.get(author);
+    }
+
     public ArrayList<TermVector> getTerms(){return new ArrayList<>(terms.values());}
 
     public ArrayList<DocVector> getDvs(){return new ArrayList<>(dvs.values());}
@@ -316,6 +346,8 @@ public final class DocsRepository
     public void clear()
     {
         docsId.clear();
+        docsCategory.clear();
+        docsAuthor.clear();
         dvs.clear();
         terms.clear();
     }

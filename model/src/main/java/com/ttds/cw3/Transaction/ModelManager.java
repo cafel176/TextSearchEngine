@@ -283,6 +283,18 @@ public final class ModelManager implements ModelManagerInterface
         return docsRepository.getDoc(id);
     }
 
+    public ArrayList<DocInterface> getDocsByCategory(String category)
+    {
+        ArrayList y = docsRepository.getDocsByCategory(category);
+        return (ArrayList<DocInterface>)y;
+    }
+
+    public ArrayList<DocInterface> getDocsByAuthor(String author)
+    {
+        ArrayList y = docsRepository.getDocsByAuthor(author);
+        return (ArrayList<DocInterface>)y;
+    }
+
     public DocVectorInterface getDvByDocid(String docid){return docsRepository.getDvByDocid(docid);}
 
     public TermVectorInterface getTermByTerm(String term){return docsRepository.getTermByTerm(term);}
