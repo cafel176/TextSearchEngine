@@ -37,6 +37,10 @@ public final class PersistanceManager implements PersistanceManagerInterface
     private int sthread = 3;
     private int rthread = 5;
 
+    private ArrayList cache;
+    private String query = "";
+    private String type = "";
+
     @Autowired
     public PersistanceManager(ModelManagerAdapter m)
     {
@@ -81,11 +85,24 @@ public final class PersistanceManager implements PersistanceManagerInterface
 
     public Pair<OtherParamsInterface,ArrayList<SearchResultInterface<Double>>> searchByRetrievalModel(String str, int start, int end)  throws Exception
     {
-        DataType dataType = DataType.Double;
-        buildTree(str,dataType);
-        setRetrievalDatas("",null);
-        ArrayList<SearchResult<Double>> arr = getRetrievalResult(dataType);
-        ArrayList<SearchResult<Double>> results = retrieval.sort(retrieval.clip(arr));
+        ArrayList<SearchResult<Double>> results;
+        if(this.query.equals(str) && this.type.equals("Retrieval"))
+        {
+            results = (ArrayList<SearchResult<Double>>)cache;
+        }
+        else
+        {
+            DataType dataType = DataType.Double;
+            buildTree(str,dataType);
+            setRetrievalDatas("",null);
+            ArrayList<SearchResult<Double>> arr = getRetrievalResult(dataType);
+            results = retrieval.sort(retrieval.clip(arr));
+
+            this.cache = results;
+            this.query = str;
+            this.type = "Retrieval";
+        }
+
         ArrayList<SearchResultInterface<Double>> output = new ArrayList<>();
         for(int i=start;i<results.size() && i<=end;i++)
         {
@@ -100,11 +117,23 @@ public final class PersistanceManager implements PersistanceManagerInterface
 
     public Pair<OtherParamsInterface,ArrayList<SearchResultInterface<Boolean>>> searchBySearchModule(String str, int start, int end) throws Exception
     {
-        DataType dataType = DataType.Boolean;
-        buildTree(str, dataType);
-        setSearchModuleDatas();
-        ArrayList<SearchResult<Boolean>> arr = getSearchModuleResult(dataType);
-        ArrayList<SearchResult<Boolean>> results = search.sort(search.clip(arr));
+        ArrayList<SearchResult<Boolean>> results;
+        if(this.query.equals(str) && this.type.equals("Search"))
+        {
+            results = (ArrayList<SearchResult<Boolean>>)cache;
+        }
+        else
+        {
+            DataType dataType = DataType.Boolean;
+            buildTree(str, dataType);
+            setSearchModuleDatas();
+            ArrayList<SearchResult<Boolean>> arr = getSearchModuleResult(dataType);
+            results = search.sort(search.clip(arr));
+
+            this.cache = results;
+            this.query = str;
+            this.type = "Search";
+        }
 
         ArrayList<SearchResultInterface<Boolean>> output = new ArrayList<>();
         for(int i=start;i<results.size() && i<=end;i++)
@@ -120,31 +149,52 @@ public final class PersistanceManager implements PersistanceManagerInterface
 
     public Pair<OtherParamsInterface,ArrayList<SearchResultInterface<Double>>> search(String str, int start, int end) throws Exception
     {
-        String[] st = str.split(" ",2);
-        RetrievalModelType type = symbols.TxtToRetrievalTypeAll(st[0].trim());
-        String query = st[1].trim();
-
-        DataType dataType = DataType.Boolean;
-        buildTree(query, dataType);
-        setSearchModuleDatas();
-        ArrayList<SearchResult<Boolean>> arr = getSearchModuleResult(dataType);
-        ArrayList<SearchResult<Boolean>> results = search.clip(arr);
-        ArrayList<String> filter = new ArrayList<>();
-        for(int i=0;i<results.size();i++)
+        ArrayList<SearchResult<Double>> results2;
+        if(this.query.equals(str) && this.type.equals("all"))
         {
-            filter.add(results.get(i).getDocid());
+            results2 = (ArrayList<SearchResult<Double>>)cache;
         }
-
-        dataType = DataType.Double;
-        buildTree(query, dataType);
-        setRetrievalDatas(st[0].trim(),filter);
-        ArrayList<SearchResult<Double>> arr2 = getRetrievalResult(dataType);
-        ArrayList<SearchResult<Double>> results2 = retrieval.clip(arr2);
-        for(int i=0;i<results2.size();i++)
+        else
         {
-            results2.get(i).setDesc(results.get(i).getDesc());
+            String[] st = str.split(" ",2);
+            String retrival = "TFIDF" ,query;
+            if(st.length==1)
+            {
+                query = st[0].trim();
+            }
+            else
+            {
+                retrival = st[0].trim();
+                query = st[1].trim();
+            }
+
+
+            DataType dataType = DataType.Boolean;
+            buildTree(query, dataType);
+            setSearchModuleDatas();
+            ArrayList<SearchResult<Boolean>> arr = getSearchModuleResult(dataType);
+            ArrayList<SearchResult<Boolean>> results = search.clip(arr);
+            ArrayList<String> filter = new ArrayList<>();
+            for(int i=0;i<results.size();i++)
+            {
+                filter.add(results.get(i).getDocid());
+            }
+
+            dataType = DataType.Double;
+            buildTree(query, dataType);
+            setRetrievalDatas(retrival,filter);
+            ArrayList<SearchResult<Double>> arr2 = getRetrievalResult(dataType);
+            ArrayList<SearchResult<Double>> arr3 = retrieval.clip(arr2);
+            for(int i=0;i<arr3.size();i++)
+            {
+                arr3.get(i).setDesc(results.get(i).getDesc());
+            }
+            results2 = retrieval.sort(arr3);
+
+            this.cache = results2;
+            this.query = str;
+            this.type = "all";
         }
-        results2 = retrieval.sort(results2);
 
         ArrayList<SearchResultInterface<Double>> output = new ArrayList<>();
         for(int i=start;i<results2.size() && i<=end;i++)
@@ -153,7 +203,7 @@ public final class PersistanceManager implements PersistanceManagerInterface
         }
 
         OtherParams param = new OtherParams();
-        param.setNum(results.size());
+        param.setNum(results2.size());
 
         return new Pair(param,output);
     }
@@ -236,7 +286,7 @@ public final class PersistanceManager implements PersistanceManagerInterface
             String param;
             if(params.length==1)
             {
-                if(type!=SearchModuleType.base)
+                if(type!=SearchModuleType.base && type!=SearchModuleType.author && type!=SearchModuleType.category)
                     throw new Exception(st[0] + "运算参数异常");
 
                 txt = params[0];
