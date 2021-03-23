@@ -19,6 +19,8 @@ public interface ModelManagerInterface
     PreProcessingInterface getPreProcessing();
 
     DocInterface getDoc(String id);
+    ArrayList<DocInterface> getDocsByCategory(String category);
+    ArrayList<DocInterface> getDocsByAuthor(String author);
     DocVectorInterface getDvByDocid(String docid);
     TermVectorInterface getTermByTerm(String term);
 /*
