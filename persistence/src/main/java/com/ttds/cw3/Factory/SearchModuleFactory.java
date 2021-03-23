@@ -11,6 +11,8 @@ public abstract class SearchModuleFactory
         {
             case phrase: module = getPhraseModule(limit,thread,pattern); break;
             case proximity: module = getProximityModule(limit,thread,pattern); break;
+            case category: module = getCategoryModule(limit,thread,pattern); break;
+            case author: module = getAuthorModule(limit,thread,pattern); break;
             default: module = getBaseModule(limit,thread,pattern); break;
         }
         return module;
@@ -29,5 +31,15 @@ public abstract class SearchModuleFactory
     private static SearchModule getProximityModule(int limit, int thread,String pattern)
     {
         return new ProximitySearch(limit,thread,pattern);
+    }
+
+    private static SearchModule getCategoryModule(int limit,int thread, String pattern)
+    {
+        return new SearchByCategory(limit,thread,pattern);
+    }
+
+    private static SearchModule getAuthorModule(int limit,int thread, String pattern)
+    {
+        return new SearchByAuthor(limit,thread,pattern);
     }
 }
