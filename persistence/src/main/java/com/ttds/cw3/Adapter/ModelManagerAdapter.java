@@ -57,6 +57,16 @@ public class ModelManagerAdapter
             return new DocAdapter(manager.getDoc(id));
     }
 
+    public ArrayList<DocInterface> getDocsByCategory(String category)
+    {
+        return manager.getDocsByCategory(category);
+    }
+
+    public ArrayList<DocInterface> getDocsByAuthor(String author)
+    {
+        return manager.getDocsByAuthor(author);
+    }
+
     public DocVectorAdapter getDvByDocid(String docid)
     {
         DocVectorInterface i = manager.getDvByDocid(docid);
