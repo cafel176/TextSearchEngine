@@ -4,5 +4,7 @@ public enum SearchModuleType
 {
     base,
     phrase,
-    proximity
+    proximity,
+    author,
+    category
 }
