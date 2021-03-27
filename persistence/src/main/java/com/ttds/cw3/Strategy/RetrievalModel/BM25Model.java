@@ -3,13 +3,10 @@ package com.ttds.cw3.Strategy.RetrievalModel;
 import com.ttds.cw3.Adapter.DocAdapter;
 import com.ttds.cw3.Adapter.DocVectorAdapter;
 import com.ttds.cw3.Adapter.ModelManagerAdapter;
-import com.ttds.cw3.Adapter.TermVectorAdapter;
 import com.ttds.cw3.Data.SearchResult;
-import com.ttds.cw3.Interface.DocInterface;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -24,27 +21,27 @@ public final class BM25Model extends RetrievalModel
     }
 
     @Override
-    protected SearchResult<Double> searchDoc(ArrayList<TermVectorAdapter> terms, DocVectorAdapter doc, DocAdapter docinfo, String other)
+    protected SearchResult<Double> searchDoc(ArrayList<String> words, DocVectorAdapter doc, DocAdapter docinfo, ModelManagerAdapter m,String other)
     {
-        double N = Integer.parseInt(other);
+        double N = m.getDocSize();
         double score = 0.0;
         double k = 1.2;
         double b = 0.75;
         double avgdl = this.alldl/this.N;
 
-        for(int i=0;i<terms.size();i++)
+        for(int i=0;i<words.size();i++)
         {
-            Integer tf = doc.getTerms().get(terms.get(i).getTerm());
+            Integer tf = doc.getTerms().get(words.get(i));
             if(tf==null)
                 continue;
             double dl = docinfo.getText().length();
             double l = dl/avgdl;
-            double df = terms.get(i).getDf();
+            double df = m.getTermByTerm(words.get(i)).getDf();
             double re = ((tf*(k+1))/(k*(1.0-b+b*l)+tf)) * log((N-df+0.5)/(df+0.5),10);
             score += re;
         }
 
-        SearchResult re = new SearchResult(doc.getDocid(),doc.getDocName(), score);
+        SearchResult re = new SearchResult(docinfo.getId(),docinfo.getName(),docinfo.getAuthor(),docinfo.getCategory(), score);
         re.setDesc(Double.toString(score));
 
         return re;
@@ -57,77 +54,57 @@ public final class BM25Model extends RetrievalModel
     }
 
     @Override
-    protected String prepare(int size, int max,int all, ArrayList<String> words,ModelManagerAdapter m)
+    protected String prepare(int num, List docs, ArrayList<String> words,ModelManagerAdapter m)
     {
-        for(int k=0;k<all;k++)
+        if(thread<=0)
+            process(0, num, docs, words,m);
+        else
         {
-            int num = (k + 1) * max;
-            if (num > size)
-                num = size;
-
-            List dvs = null;
-            ConcurrentHashMap<String, DocInterface>  docs = null;
-            while (docs == null)
-                docs = m.docDBfind(k, max, all);
-            while (dvs == null)
-                dvs = m.dvsDBfind(k, max, all);
-
-            if(thread<=0)
-                process(k*max,k*max, num, words,dvs,docs);
-            else
+            ExecutorService pool = Executors.newCachedThreadPool();
+            int per = num/thread;
+            if(per < 1)
+                per = 1;
+            for (int s = 0, e = per; e <= num;)
             {
-                ExecutorService pool = Executors.newCachedThreadPool();
-                int per = max/thread;
-                if(per < 1)
-                    per = 1;
-                for (int s = k*max, e = k*max+per; e <= num;)
-                {
-                    ArrayList<String> finalWords = words;
-                    int finalS = s, finalE = e;
-                    int finalK = k;
-                    List finalDvs = dvs;
-                    ConcurrentHashMap<String,DocInterface> finalDocs = docs;
-                    pool.execute(new Runnable() {
-                        @Override
-                        public void run()
-                        {
-                            final int start = finalS,end = finalE;
-                            process(finalK *max,start, end, finalWords, finalDvs, finalDocs);
-                        }
-                    });
+                ArrayList<String> finalWords = words;
+                int finalS = s, finalE = e;
+                pool.execute(new Runnable() {
+                    @Override
+                    public void run()
+                    {
+                        final int start = finalS,end = finalE;
+                        process(start, end, docs, words,m);
+                    }
+                });
 
-                    if(e==num)
-                        break;
+                if(e==num)
+                    break;
 
-                    s = e;
-                    e += per;
-                    if(e>num)
-                        e = num;
-                }
-                pool.shutdown();
-                try
-                {
-                    pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                s = e;
+                e += per;
+                if(e>num)
+                    e = num;
+            }
+            pool.shutdown();
+            try
+            {
+                pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
         return null;
     }
 
-    private void process(int ori, int start,int end,ArrayList<String> words,List dvs,ConcurrentHashMap<String,DocInterface> docs)
+    private void process(int start,int end,List dvs, ArrayList<String> words,ModelManagerAdapter m)
     {
         double alldl = 0.0;
         double N = 0.0;
         for (int j=start;j<end;j++)
         {
-            DocVectorAdapter dv = new DocVectorAdapter(dvs.get(j-ori));
-            Object doc = docs.get(dv.getDocid());
-            if(doc==null)
-                continue;
-            DocAdapter docinfo = new DocAdapter(doc);
+            DocVectorAdapter dv = new DocVectorAdapter(dvs.get(j));
+            DocAdapter docinfo = m.getDoc(dv.getDocid());
             for(int i=0;i<words.size();i++)
             {
                 Integer tf = dv.getTerms().get(words.get(i));
