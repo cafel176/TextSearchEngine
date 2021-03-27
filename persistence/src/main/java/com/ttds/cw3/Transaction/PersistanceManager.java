@@ -35,9 +35,7 @@ public final class PersistanceManager implements PersistanceManagerInterface
 
     private Properties props;
     private int sthread = 3;
-    private int smax = 30000;
     private int rthread = 5;
-    private int rmax = 10000;
 
     private ArrayList cache;
     private String query = "";
@@ -64,8 +62,6 @@ public final class PersistanceManager implements PersistanceManagerInterface
 
             sthread = Integer.parseInt(props.getProperty("sthread").trim());
             rthread = Integer.parseInt(props.getProperty("rthread").trim());
-            smax = Integer.parseInt(props.getProperty("smax").trim());
-            rmax = Integer.parseInt(props.getProperty("rmax").trim());
 
             symbols = new SymbolManager(props);
 
@@ -192,6 +188,7 @@ public final class PersistanceManager implements PersistanceManagerInterface
             for(int i=0;i<arr3.size();i++)
             {
                 arr3.get(i).setDesc(results.get(i).getDesc());
+                arr3.get(i).setText(results.get(i).getText());
             }
             results2 = retrieval.sort(arr3);
 
@@ -290,7 +287,7 @@ public final class PersistanceManager implements PersistanceManagerInterface
             String param;
             if(params.length==1)
             {
-                if(type!=SearchModuleType.base)
+                if(type!=SearchModuleType.base && type!=SearchModuleType.author && type!=SearchModuleType.category)
                     throw new Exception(st[0] + "运算参数异常");
 
                 txt = params[0];
@@ -301,7 +298,7 @@ public final class PersistanceManager implements PersistanceManagerInterface
                 param = params[2];
             }
 
-            ArrayList<SearchResult<Boolean>> arr = search.spaenDatas(smax,type,txt,param,m);
+            ArrayList<SearchResult<Boolean>> arr = search.spaenDatas(type,txt,param,m);
             tree.setData(i, arr);
         }
     }
@@ -314,6 +311,7 @@ public final class PersistanceManager implements PersistanceManagerInterface
             String[] params = getParams(datas.get(i));
 
             String[] st = params[0].split("_",2);
+
             RetrievalModelType type;
             if(type_.isEmpty())
                 type = symbols.TxtToRetrievalTypeAll(st[0]);
@@ -333,20 +331,11 @@ public final class PersistanceManager implements PersistanceManagerInterface
                 txt = params[1];
                 param = params[2];
             }
-
-            ArrayList<SearchResult<Double>> re = retrieval.spaenDatas(rmax,type,txt,param,filter);
+            if(st[0].trim().equals("AUT")||st[0].trim().equals("CAT"))
+                type = RetrievalModelType.base;
+            ArrayList<SearchResult<Double>> re = retrieval.spaenDatas(type,txt,param,filter);
             tree.setData(i, re);
         }
-    }
-
-    public void init()
-    {
-        m.init();
-    }
-
-    public void test()
-    {
-        m.test();
     }
 }
 
