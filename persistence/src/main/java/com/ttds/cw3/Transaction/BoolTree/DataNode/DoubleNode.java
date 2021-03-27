@@ -29,7 +29,7 @@ public final class DoubleNode extends DataNode<Double>
             if(a==null)
                 continue;
             Double d = a.getValue() + otherValue.get(i).getValue();
-            SearchResult re = new SearchResult(a.getDocid(),a.getDocName(),d);
+            SearchResult re = new SearchResult(a.getDocid(),a.getDocName(),a.getAuthor(),a.getCategory(),d);
             re.setDesc(Double.toString(d));
             result.add(re);
         }
@@ -47,7 +47,7 @@ public final class DoubleNode extends DataNode<Double>
             if(a==null)
                 continue;
             Double d = a.getValue() - otherValue.get(i).getValue();
-            SearchResult re = new SearchResult(a.getDocid(),a.getDocName(),d);
+            SearchResult re = new SearchResult(a.getDocid(),a.getDocName(),a.getAuthor(),a.getCategory(),d);
             re.setDesc(Double.toString(d));
             result.add(re);
         }
@@ -64,7 +64,7 @@ public final class DoubleNode extends DataNode<Double>
             if(a==null)
                 continue;
             Double d = -a.getValue();
-            SearchResult re = new SearchResult(a.getDocid(),a.getDocName(),d);
+            SearchResult re = new SearchResult(a.getDocid(),a.getDocName(),a.getAuthor(),a.getCategory(),d);
             re.setDesc(Double.toString(d));
             result.add(re);
         }
