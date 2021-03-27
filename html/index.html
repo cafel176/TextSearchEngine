@@ -17,16 +17,6 @@
             </button> 
             <a class="navbar-brand" href="#">TTDS CW3</a>
             <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
-                <ul class="navbar-nav">
-                    <li id="type" class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" style="margin-right:20px">{{txt}}</a>
-                        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                            <a v-on:click="setType('all')" class="dropdown-item" href="#">all</a>
-                            <a v-on:click="setType('search')" class="dropdown-item" href="#">search</a>
-                            <a v-on:click="setType('retrieval')" class="dropdown-item" href="#">retrieval</a>
-                        </div>
-                    </li>
-                </ul>
                 <form id="txt" class="form-inline">
                     <input v-model="query" class="form-control mr-sm-2" type="text" style="width:550px">
                     <button v-on:click="search()" class="btn btn-primary my-2 my-sm-0" type="submit">
@@ -55,7 +45,7 @@
                     <div class="col-md-12" style="margin-bottom:10px">
                         <h3>{{hint}}</h3>
                     </div>
-                    <todo-item v-for="item in list" :key="item.docname" :docname="item.docname" :desc="item.desc"></todo-item>
+                    <todo-item v-for="item in list" :key="item.docname" :docname="item.docname" :text="item.text" :author="item.author" :category="item.category" :data="item.data"></todo-item>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
@@ -89,9 +79,7 @@
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
 
     <script type="text/javascript">
-        let value = localStorage.getItem("type");
-        var type = (value == undefined || value == null) ? "all" : value //"search"
-        value = localStorage.getItem("txt");
+        let value = localStorage.getItem("txt");
         var txt = (value == undefined || value == null) ? 'income tax reduction' : value
         value = localStorage.getItem("everyPage");
         var everyPage = (value == undefined || value == null) ? 10 : value
@@ -106,8 +94,8 @@
         const maxShowPage = 5
 
         Vue.component('todo-item', {
-            template: '<div class="col-md-12" style="margin: 10px 0"><h3>{{docname}}</h3><span class="badge badge-success" style="margin-right:10px">Label</span><p class="lead">{{desc}}</p></div>',
-            props: ['docname','desc']
+            template: '<div class="col-md-12" style="margin: 10px 0"><h3>docid: {{docname}}</h3><h5>author: {{author}}</h5><span class="badge badge-success" style="margin-right:10px">{{category}}</span><span class="badge badge-success" style="margin-right:10px">{{data}}</span><p class="lead">{{text}}</p></div>',
+            props: ['docname','text','author','category','data']
         })
         
         Vue.component('page-item', {
@@ -131,7 +119,7 @@
 
                     const address = 'http://localhost'
 
-                    axios.get(address+':8080/get/' + type + params)
+                    axios.get(address+':8080/get/all/' + params)
                         .then(function (response)
                         {
                             if(response.data.type == "success")
@@ -158,26 +146,6 @@
                         });
                 }
             }
-        })
-
-        var vue_type = new Vue({
-            el: '#type',
-            data: {
-                txt:''
-            },
-            methods:
-            {
-                setType: function (param)
-                {
-                    type = param
-                    localStorage.setItem("type", type);
-                    this.txt = type;
-                }
-            },
-            mounted: function ()
-            {
-                this.txt = type;
-            } 
         })
 
         var vue_everyPage = new Vue({
