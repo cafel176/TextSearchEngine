@@ -2,9 +2,7 @@ package com.ttds.cw3.Strategy.SearchModule;
 
 import com.ttds.cw3.Adapter.*;
 import com.ttds.cw3.Data.SearchResult;
-import com.ttds.cw3.Interface.DocInterface;
 import com.ttds.cw3.Interface.DocVectorInterface;
-import com.ttds.cw3.Interface.TermVectorInterface;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,7 +33,7 @@ public abstract class SearchModule
         this.pattern = pattern;
     }
 
-    public SearchResult<Boolean>[] searchAllDoc(int max,String str, String param, PreProcessingAdapter preProcessing, ModelManagerAdapter m) throws Exception
+    public SearchResult<Boolean>[] searchAllDoc(String str, String param, PreProcessingAdapter preProcessing, ModelManagerAdapter m) throws Exception
     {
         setParams(param);
 
@@ -48,52 +46,39 @@ public abstract class SearchModule
         if(words.size()==0)
             words = new ArrayList(Arrays.asList(str.split(" ")));
 
-        ArrayList<TermVectorAdapter> tvs = new ArrayList<>();
-        for(int i=0;i< words.size();i++)
-            tvs.add(m.getTermByTerm(words.get(i)));
-
         // 结果输出
-        int size = m.getDocSize();
+        List dvs = m.getDvs();
+        int size = dvs.size();
         SearchResult<Boolean>[] results = new SearchResult[size];
 
-        int all = (int)Math.ceil(1.0*size/max);
-
         // =============== 遍历文档集合 ===============
+        final int max = 100000;
+        int all = (int)Math.ceil(1.0*size/max);
         long startTime = System.currentTimeMillis();
         for(int k=0;k<all;k++)
         {
             int num = (k+1)*max;
-            if(num > size)
+            if(num>size)
                 num = size;
 
-            List dvs = null;
-            ConcurrentHashMap<String, DocInterface> docs = null;
-            while (docs==null)
-                docs = m.docDBfind(k,max,all);
-            while (dvs==null)
-                dvs = m.dvsDBfind(k,max,all);
-
             if(thread<=0)
-                inThread(k*max,k*max, num, tvs,results,dvs,docs, m);
+                inThread(size,k*max, num, words,dvs,results, m);
             else
             {
                 ExecutorService pool = Executors.newCachedThreadPool();
-                int per = max/thread;
+                int per = num/thread;
                 if(per < 1)
                     per = 1;
                 for (int s = k*max, e = k*max+per; e <= num;)
                 {
-                    ArrayList<TermVectorAdapter> finalWords = tvs;
-                    final int finalS = s, finalE = e;
-                    List finalDvs = dvs;
-                    final int finalK = k;
-                    ConcurrentHashMap<String,DocInterface> finalDocs = docs;
+                    ArrayList<String> finalWords = words;
+                    int finalS = s, finalE = e;
                     pool.execute(new Runnable() {
                         @Override
                         public void run()
                         {
                             final int start = finalS,end = finalE;
-                            inThread(finalK *max,start, end, finalWords,results, finalDvs, finalDocs, m);
+                            inThread(size,start, end, finalWords,dvs,results, m);
                         }
                     });
 
@@ -113,6 +98,7 @@ public abstract class SearchModule
                     e.printStackTrace();
                 }
             }
+
         }
 
         long endTime = System.currentTimeMillis();
@@ -121,34 +107,50 @@ public abstract class SearchModule
         return results;
     }
 
-    protected void inThread(int ori, int start, int end, ArrayList<TermVectorAdapter> tvs,
-                            SearchResult<Boolean>[] results, List dvs,ConcurrentHashMap<String,DocInterface> docs, ModelManagerAdapter m)
+    protected void inThread(int size, int start, int end, ArrayList<String> words, List dvs,
+                            SearchResult<Boolean>[] results, ModelManagerAdapter m)
     {
         for(int j=start;j<end;j++)
         {
-            if(j-ori==dvs.size())
-                System.out.println(1);
-
-            DocVectorAdapter dv = new DocVectorAdapter(dvs.get(j-ori));
+            DocVectorAdapter dv = new DocVectorAdapter(dvs.get(j));
+            if(dv==null)
+                continue;
 
             // =============== 筛选步骤 ===============
             boolean check = false;
-            for (TermVectorAdapter tv : tvs)
-                if(!dv.getTerms().containsKey(tv.getTerm())) // 当前文档不包含查询词
+            for (String word : words)
+                if(!dv.getTerms().containsKey(word)) // 当前文档不包含查询词
                 {
-                    results[j] = new SearchResult(dv.getDocid(),dv.getDocName(), false);
+                    results[j] = new SearchResult(dv.getDocid(),dv.getDocName(),"","", false);
                     check = true;
                     break;
                 }
             if(check)
                 continue;
 
-            Object doc = docs.get(dv.getDocid());
-            if(doc==null)
-                continue;
-
-            results[j] = searchDoc(tvs,new DocAdapter(doc));
+            results[j] = searchDoc(words,dv,m.getDoc(dv.getDocid()),m);
         }
+    }
+
+    public SearchResult<Boolean> searchDoc(String str, String param, PreProcessingAdapter preProcessing, DocVectorAdapter doc,DocAdapter docinfo, ModelManagerAdapter m) throws Exception
+    {
+        setParams(param);
+
+        preProcessing.doProcessing(str);
+        ConcurrentHashMap<String, ArrayList<Integer>> wordsMap = preProcessing.getTerms();
+
+        // 搜索输入
+        ArrayList<String> words = new ArrayList(wordsMap.keySet());
+
+        if(words.size()==0)
+            words = new ArrayList(Arrays.asList(str.split(" ")));
+
+        // =============== 筛选步骤 2 ===============
+        for (String word : words)
+            if(!doc.getTerms().containsKey(word)) // 当前文档不包含查询词
+                return new SearchResult(doc.getDocid(),doc.getDocName(),"","",false);
+
+        return searchDoc(words,doc,docinfo,m);
     }
 
     protected String getRelatedStr(int pos, String text, String pattern)
@@ -198,6 +200,6 @@ public abstract class SearchModule
 
     protected abstract void setParams(String param) throws Exception;
 
-    protected abstract SearchResult<Boolean> searchDoc(ArrayList<TermVectorAdapter> tvs, DocAdapter doc);
+    protected abstract SearchResult<Boolean> searchDoc(ArrayList<String> words, DocVectorAdapter doc, DocAdapter docinfo, ModelManagerAdapter m);
 
 }

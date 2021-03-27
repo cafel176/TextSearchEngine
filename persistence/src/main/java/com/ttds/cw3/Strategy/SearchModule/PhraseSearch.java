@@ -3,7 +3,6 @@ package com.ttds.cw3.Strategy.SearchModule;
 import com.ttds.cw3.Adapter.DocAdapter;
 import com.ttds.cw3.Adapter.DocVectorAdapter;
 import com.ttds.cw3.Adapter.ModelManagerAdapter;
-import com.ttds.cw3.Adapter.TermVectorAdapter;
 import com.ttds.cw3.Data.SearchResult;
 
 import java.util.ArrayList;
@@ -21,15 +20,16 @@ public class PhraseSearch extends SearchModule
     }
 
     @Override
-    protected SearchResult<Boolean> searchDoc(ArrayList<TermVectorAdapter> tvs, DocAdapter doc)
+    protected SearchResult<Boolean> searchDoc(ArrayList<String> words, DocVectorAdapter doc, DocAdapter docinfo, ModelManagerAdapter m)
     {
+
         // =============== 匹配前两个词位置 ===============
         int pos = -1;
-        String docid = doc.getId();
-        if(tvs.size()>1)
+        String docid = doc.getDocid();
+        if(words.size()>1)
         {
-            ArrayList<Integer> posList1 = tvs.get(0).getPostings().get(docid);
-            ArrayList<Integer> posList2 = tvs.get(1).getPostings().get(docid);
+            ArrayList<Integer> posList1 = m.getTermByTerm(words.get(0)).getPostings().get(docid);
+            ArrayList<Integer> posList2 = m.getTermByTerm(words.get(1)).getPostings().get(docid);
             for(int i=0;i<posList1.size();i++)
             {
                 pos = match(posList1.get(i),posList2);
@@ -39,27 +39,28 @@ public class PhraseSearch extends SearchModule
 
             // 匹配失败
             if(pos<0)
-                return new SearchResult(docid,doc.getName(),false);
+                return new SearchResult(docid,doc.getDocName(),docinfo.getAuthor(),docinfo.getCategory(),false);
         }
         else
         {
-            pos = tvs.get(0).getPostings().get(docid).get(0);
+            pos = m.getTermByTerm(words.get(0)).getPostings().get(docid).get(0);
         }
 
         // =============== 匹配其他词 ===============
-        for(int i=2;i<tvs.size();i++)
+        for(int i=2;i<words.size();i++)
         {
-            ArrayList<Integer> posList = tvs.get(i).getPostings().get(docid);
+            ArrayList<Integer> posList = m.getTermByTerm(words.get(i)).getPostings().get(docid);
             pos = match(pos,posList);
             // 如果不存在，结束搜索
             if(pos<0)
-                return new SearchResult(docid,doc.getName(),false);
+                return new SearchResult(docid,doc.getDocName(),docinfo.getAuthor(),docinfo.getCategory(),false);
         }
 
-        SearchResult<Boolean> re = new SearchResult(docid,doc.getName(),true);
-        String text = doc.getText();
-        pos = tvs.get(0).getPostings().get(docid).get(0);
+        SearchResult<Boolean> re = new SearchResult(docid,doc.getDocName(),docinfo.getAuthor(),docinfo.getCategory(),true);
+        String text = docinfo.getText();
+        pos = m.getTermByTerm(words.get(0)).getPostings().get(docid).get(0);
         re.setDesc(getRelatedStr(pos,text,pattern));
+        re.setText(text);
 
         return re;
     }
