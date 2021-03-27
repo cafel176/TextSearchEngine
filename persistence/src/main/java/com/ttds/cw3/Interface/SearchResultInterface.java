@@ -6,4 +6,7 @@ public interface SearchResultInterface<T>
     String getDocName();
     T getValue();
     String getDesc();
+    String getAuthor();
+    String getCategory();
+    String getText();
 }
