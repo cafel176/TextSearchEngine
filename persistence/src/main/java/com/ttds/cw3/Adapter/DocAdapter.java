@@ -30,7 +30,7 @@ public class DocAdapter
 
     public String getCategory()
     {
-        return getCategory();
+        return doc.getCategory();
     }
 
     public String getText()
