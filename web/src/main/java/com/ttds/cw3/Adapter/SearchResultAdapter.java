@@ -33,4 +33,16 @@ public class SearchResultAdapter<T>
     {
         return result.getDesc();
     }
+
+    public String getText() {
+        return result.getText();
+    }
+
+    public String getAuthor() {
+        return result.getAuthor();
+    }
+
+    public String getCategory() {
+        return result.getCategory();
+    }
 }
